@@ -21,7 +21,8 @@ git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
 ## Completions must be configured by adding the following to your .bashrc:
 . "$HOME/.asdf/completions/asdf.bash"
 
-==> Restart your shell so that PATH changes take effect. Opening a new terminal tab will usually do it.
+==> Restart your shell so that PATH changes take effect. 
+==> Opening a new terminal tab will usually do it.
 
 ## Check asdf version
 asdf version
@@ -57,7 +58,8 @@ erlang                       https://github.com/asdf-vm/asdf-erlang.git
 ------------------------------------------------------------
 
 # Check compatibility between elixir and erlang:
-## https://hexdocs.pm/elixir/compatibility-and-deprecations.html#compatibility-between-elixir-and-erlang-otp
+## (https://hexdocs.pm/elixir/compatibility-and-
+## deprecations.html#compatibility-between-elixir-and-erlang-otp)
 
 
 # Install Erlang
@@ -99,7 +101,8 @@ asdf global elixir 1.18.2-otp-27
 ## Check Elixir Version
 elixir -v
 ------------------------------------------------------------
-Erlang/OTP 27 [erts-15.2.1] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit:ns]
+Erlang/OTP 27 [erts-15.2.1] [source] [64-bit] [smp:16:16] 
+[ds:16:16:10] [async-threads:1] [jit:ns]
 
 Elixir 1.18.2 (compiled with Erlang/OTP 27)
 ------------------------------------------------------------
