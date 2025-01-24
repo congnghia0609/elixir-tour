@@ -148,39 +148,7 @@ mix help phx.new
 mix phx.new hello --no-ecto
 ------------------------------------------------------------
 * creating hello/lib/hello/application.ex
-* creating hello/lib/hello.ex
-* creating hello/lib/hello_web/controllers/error_json.ex
-* creating hello/lib/hello_web/endpoint.ex
-* creating hello/lib/hello_web/router.ex
-* creating hello/lib/hello_web/telemetry.ex
-* creating hello/lib/hello_web.ex
-* creating hello/mix.exs
-* creating hello/README.md
-* creating hello/.formatter.exs
-* creating hello/.gitignore
-* creating hello/test/support/conn_case.ex
-* creating hello/test/test_helper.exs
-* creating hello/test/hello_web/controllers/error_json_test.exs
-* creating hello/lib/hello_web/controllers/error_html.ex
-* creating hello/test/hello_web/controllers/error_html_test.exs
-* creating hello/lib/hello_web/components/core_components.ex
-* creating hello/lib/hello_web/controllers/page_controller.ex
-* creating hello/lib/hello_web/controllers/page_html.ex
-* creating hello/lib/hello_web/controllers/page_html/home.html.heex
-* creating hello/test/hello_web/controllers/page_controller_test.exs
-* creating hello/lib/hello_web/components/layouts/root.html.heex
-* creating hello/lib/hello_web/components/layouts/app.html.heex
-* creating hello/lib/hello_web/components/layouts.ex
-* creating hello/priv/static/images/logo.svg
-* creating hello/lib/hello/mailer.ex
-* creating hello/lib/hello_web/gettext.ex
-* creating hello/priv/gettext/en/LC_MESSAGES/errors.po
-* creating hello/priv/gettext/errors.pot
-* creating hello/priv/static/robots.txt
-* creating hello/priv/static/favicon.ico
-* creating hello/assets/js/app.js
-* creating hello/assets/vendor/topbar.js
-* creating hello/assets/css/app.css
+...
 * creating hello/assets/tailwind.config.js
 
 Fetch and install dependencies? [Yn] y
@@ -214,3 +182,8 @@ iex -S mix phx.server
 # we should see the Phoenix Framework welcome page.
 ==> To stop it, we hit ctrl-c twice.
 ```
+
+# Editor Tool
+- VSCode + plugin ElixirLS  
+
+# Elixir Programing
