@@ -120,19 +120,6 @@ New:
 * Getting phx_new (Hex package)
 All dependencies are up to date
 Compiling 11 files (.ex)
-     warning: this clause of defp phoenix_dep/2 is never used
-     │
- 459 │   defp phoenix_dep("deps/phoenix", %{pre: ["dev"]}),
-     │        ~
-     │
-     └─ lib/phx_new/generator.ex:459:8: Phx.New.Generator.phoenix_dep/2
-
-     warning: Mix.Rebar.rebar_cmd/1 is deprecated. Use rebar_args/2 or available?/1 instead
-     │
- 271 │     Mix.Rebar.rebar_cmd(:rebar3)
-     │               ~
-     │
-     └─ lib/mix/tasks/phx.new.ex:271:15: Mix.Tasks.Phx.New.rebar_available?/0
 
 Generated phx_new app
 Generated archive "phx_new-1.7.18.ez" with MIX_ENV=prod
