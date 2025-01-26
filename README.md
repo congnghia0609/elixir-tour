@@ -504,3 +504,114 @@ Tuple thì hỗ trợ truy suất ngẫu nhiên còn List thì phải duyệt da
 Khi đếm các phần tử của 1 cấu trúc dữ liệu, Elixir tuân theo quy tắc: hàm `size` nếu phép toán diễn ra theo thời gian không đổi (giá trị được tính toán trước) và `length` nếu phép toán là tuyến tính (tính toán sẽ chậm nếu đầu vào tăng, --> ghi nhớ: `length` và `linear` đều bắt đầu bằng `l`).  
 Ví dụ: `byte_size()`, `tuple_size()`, `length()` và `String.length()`.  
 
+
+## Pattern matching (Khớp mẫu)
+Toán tử `=` trong Elixir được gọi là toán tử khớp, dùng để khớp mẫu bên trong các cấu trúc dữ liệu. Toán tử `^` dùng để truy cập các giá trị được ràng buộc trước đó.  
+
+### The match operator (Toán tử khớp)
+Trong Elixir, toán tử `=` được gọi là toán tử khớp, vì:  
+```bash
+iex(1)> x = 1 
+1
+iex(2)> 1 = x 
+1
+iex(3)> 2 = x 
+** (MatchError) no match of right hand side value: 1
+    (stdlib 6.2) erl_eval.erl:667: :erl_eval.expr/6
+    iex:3: (file)
+```
+Lưu ý, biểu thức 1 = x là hợp lệ và nó khớp vì cả 2 vế đều bằng 1. Khi các vế không khớp thì lỗi MatchError được quăng ra.  
+Một biến chỉ có thể được gán ở phía bên trái của `=`.  
+
+### Pattern matching (khớp mẫu)
+Toán tử khớp không chỉ được dùng để gán các giá trị đơn giản, mà còn hữu ích cho việc giải cấu trúc các kiểu dữ liệu phức tạp hơn, ví dụ:  
+```bash
+iex(3)> {a, b, c} = {:hello, "world", 42}
+{:hello, "world", 42}
+iex(4)> a
+:hello
+iex(5)> b
+"world"
+iex(6)> c
+42
+```
+Lỗi khớp mẫu sẽ xảy ra nếu kích thước cả 2 vế khác nhau, hoặc kiểu khác nhau.  
+```bash
+iex(7)> {a, b, c} = {:hello, "world"}
+** (MatchError) no match of right hand side value: {:hello, "world"}
+    (stdlib 6.2) erl_eval.erl:667: :erl_eval.expr/6
+    iex:7: (file)
+
+iex(7)> {a, b, c} = [:hello, "world", 42]
+** (MatchError) no match of right hand side value: [:hello, "world", 42]
+    (stdlib 6.2) erl_eval.erl:667: :erl_eval.expr/6
+    iex:7: (file)
+
+iex(7)> [a, b, c] = [1, 2, 3]
+[1, 2, 3]
+iex(8)> a
+1
+```
+
+Một List có hỗ trợ khớp head và tail:  
+```bash
+iex(9)> [head | tail] = [1, 2, 3]
+[1, 2, 3]
+iex(10)> head
+1
+iex(11)> tail
+[2, 3]
+
+iex(12)>[head | tail] = []
+** (MatchError) no match of right hand side value: []
+```
+
+Cú pháp `[head | tail]` còn hỗ trợ cho việc thêm phần tử và đầu danh sách list.  
+```bash
+iex> list = [1, 2, 3]
+[1, 2, 3]
+iex> [0 | list]
+[0, 1, 2, 3]
+```
+Việc khớp mẫu cũng giúp dễ dàng phân rã cấu trúc các kiểu dữ liệu tuple và list, ứng dụng vào đệ quy trong Elixir và với các cấu trúc như maps và binaries.  
+
+### The pin operator (toán tử ghim)
+Sử dụng toán tử ghim `^` để khớp mẫu với giá trị hiện tại của biến thay vì liên kết lại biến.  
+```bash
+iex> x = 1
+1
+iex> ^x = 2
+** (MatchError) no match of right hand side value: 2
+```
+Vì chúng ta đã ghim x khi nó được liên kết với giá trị 1, nên nó sẽ tương đương với biểu thức sau:  
+```bash
+iex> 1 = 2
+** (MatchError) no match of right hand side value: 2
+```
+
+Chúng ta có thể sử dụng toán tử ghim bên trong khớp mẫu tuple hoặc list:  
+```bash 
+iex> x = 1
+1
+iex> [^x, 2, 3] = [1, 2, 3]
+[1, 2, 3]
+iex> {y, ^x} = {2, 1}
+{2, 1}
+iex> y
+2
+iex> {y, ^x} = {2, 2}
+** (MatchError) no match of right hand side value: {2, 2}
+```
+
+Trong 1 số trường hợp, bạn không quan tâm đến 1 giá trị cụ thể trong mẫu thì ta dùng dấu gạch dưới (underscore) `_` để thay thế, ví du:  
+```bash
+iex> [head | _] = [1, 2, 3]
+[1, 2, 3]
+iex> head
+1
+```
+
+
+
+
+
