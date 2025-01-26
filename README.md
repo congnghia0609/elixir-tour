@@ -217,10 +217,8 @@ true       # boolean
 
 ## Basic arithmetic
 Lưu ý toán tử `/` luôn trả về kiểu float.  
-Để thực hiện phép chia trả về số integer và phần dư  
-của phép chia thì dùng hàm `div` và `rem`  
-Khi gọi hàm function có thể bỏ qua dấu ngoặc đơn,  
-nhưng khuyến khích để dấu ngoặc cho dễ đọc code hơn.  
+Để thực hiện phép chia trả về số integer và phần dư của phép chia thì dùng hàm `div` và `rem`  
+Khi gọi hàm function có thể bỏ qua dấu ngoặc đơn, nhưng khuyến khích để dấu ngoặc cho dễ đọc code hơn.  
 ```bash
 iex(1)> 1 + 2
 3
@@ -275,7 +273,7 @@ Hàm `is_number` dùng để kiểm tra số nguyên hoặc số thực float.
 
 ## Toán tử logic Booleans and nil
 Các toán tử boolean: `or`, `and`, and `not`, được sử dụng nghiêm ngặt với các biểu thức cho ra giá trị boolean (`true` or `false`).  
-`nil` là để chỉ sự vắng ma7t5 1 giá trị.  
+`nil` là để chỉ sự vắng mặt 1 giá trị.  
 `false` và `nil` được coi là sai, tất cả các giá trị khác được coi là đúng.  
 Trình tự đánh giá các biểu thức từ trái sang phải.  
 ```bash
@@ -388,4 +386,121 @@ iex(3)> 1 === 1.0
 false
 ```
 
+## Lists and tuples (Danh sách và Bộ)
+### (Linked) Lists (Danh sách liên kết)
+Elixir sử dụng dấu ngoặc vuông để chỉ định danh sách các giá trị, trong đó mỗi phần tử có thể thuộc bất kỳ kiểu dữ liệu nào.  
+Hai danh sách có thể được nối hoặc trừ bằng các toán tử `++` và `--`. Các toán tử này không sửa đổi các danh sách ban đầu mà luôn trả về 1 danh sách mới.  
+Các cấu trúc dữ liệu Elixir là bất biến (immutable). Lợi thế là làm code rõ ràng hơn, có thể thoải mái truyền dữ liệu mà không lo bị thay đổi dữ liệu trong bộ nhớ - chỉ có thể chuyển đổi dữ liệu.  
+```bash
+iex(1)> [1, 2, true, 3]
+[1, 2, true, 3]
+iex(2)> length([1, 2, true, 3])
+4
+iex(3)> [1, 2, 3] ++ [4, 5, 6]
+[1, 2, 3, 4, 5, 6]
+iex(4)> [1, true, 2, false, 3, true] -- [true, false]
+[1, 2, 3, true]
+iex(5)> [1, true, 2, false, 3, true] -- [true, 4]
+[1, 2, false, 3, true]
+```
+Hai hàm `hd()` và `tl()` dùng để lấy phần tử đầu tiên của danh sách (head) và tail là các phần tử còn lại cảu danh sách.  
+Dùng `hd()` và `tl()` với danh sách rỗng sẽ gây ra lỗi.  
+```bash
+iex(6)> list = [1, 2, 3]
+[1, 2, 3]
+iex(7)> hd(list)
+1
+iex(8)> tl(list)
+[2, 3]
+iex(9)> hd([])
+** (ArgumentError) errors were found at the given arguments:
+
+  * 1st argument: not a nonempty list
+
+    :erlang.hd([])
+    iex:9: (file)
+```
+Đôi khi việc tạo 1 danh sách sẽ trả về một chuỗi được bắt đầu bằng `~c`, vì Elixir in danh sách số ASCII thành danh sách các ký tự, để hiểu rõ chuỗi ký tự này ta dùng `i` để lấy thông tin về giá trị đó.  
+```bash
+iex(9)> [11, 12, 13]
+~c"\v\f\r"
+iex(10)> [104, 101, 108, 108, 111]
+~c"hello"
+iex(11)> i ~c"hello"
+Term
+  ~c"hello"
+Data type
+  List
+Description
+  This is a list of integers that is printed using the `~c` sigil syntax,
+  defined by the `Kernel.sigil_c/2` macro, because all the integers in it
+  represent printable ASCII characters. Conventionally, a list of Unicode
+  code points is known as a charlist and a list of ASCII characters is a
+  subset of it.
+Raw representation
+  [104, 101, 108, 108, 111]
+Reference modules
+  List
+Implemented protocols
+  Collectable, Enumerable, IEx.Info, Inspect, JSON.Encoder, List.Chars, String.Chars
+```
+
+## Tuples (Bộ)
+Elixir dùng dấu ngoặc nhọn để định nghĩa Tuple, tương tự như list, tuple có thể chứa bất kỳ giá trị nào.  
+Tuple lưu trữ các phần tử liên tiếp trong bộ nhớ, điều này cho phép truy suất phần tử theo chỉ mục hoặc theo kích thước phần tử, chỉ mục bắt đầu từ 0.  
+```bash
+iex(1)> tuple = {:ok, "hello"}
+{:ok, "hello"}
+iex(2)> elem(tuple, 1)
+"hello"
+iex(3)> tuple_size(tuple)
+2
+iex(4)> put_elem(tuple, 1, "world")
+{:ok, "world"}
+iex(5)> tuple
+{:ok, "hello"}
+```
+`put_elem` trả về một tuple mới, tuple ban đầu không bị thay đổi.  
+Cả List và Tuple đều là bất biến (immutable), mỗi thao tác trên tuple đều trả về 1 tuple mới và không làm thay đổi tuple ban đầu.  
+
+## Lists or tuples?
+List được lưu trữ trong bộ nhớ là danh sách liên kết, các phần tử liên kết bằng con trỏ. Mọi tương tác trên list đều tuyến tính vì phải duyệt hết chiều dài danh sách liên kết. Ví dụ việc nối 2 list phụ thuộc vào chiều dài của list bên trái.  
+```bash
+iex> list = [1, 2, 3]
+[1, 2, 3]
+
+# This is fast as we only need to traverse `[0]` to prepend to `list`
+iex> [0] ++ list
+[0, 1, 2, 3]
+
+# This is slow as we need to traverse `list` to append 4
+iex> list ++ [4]
+[1, 2, 3, 4]
+```
+
+Tuple được lưu trữ liên tiếp trong bộ nhớ, việc lấy kích thước hoặc truy cập 1 phần tử theo chỉ mục sẽ nhanh hơn, đổi lại việc thêm xóa sửa các phần tử sẽ tốn kém vì phải tạo ra 1 tuple mới trong bộ nhớ. (giống khái niệm Array trong các ngôn ngữ khác). Tuy nhiên, khi cập nhật tuple thì không phải đơn thuần copy thành 1 tuple mới mà tuple cũ và tuple mới vẫn chia sẽ các phần tử cũ, ngoại trừ phần tử mới thay thế. ==> giúp giảm lượng cấp phát bộ nhớ, được thực hiện nhờ tính chất bất biến (immutable) của ngôn ngữ Elixir.  
+
+List được sử dụng khi khi số lượng phần tử trả về có thể thay đổi. Dùng Tuple khi kích thước cố định. Ví dụ:  
+
+Hàm `String.split()` trả về số lượng phần tử phụ thuộc vào input cho nên trả về List.  
+Hàm `String.split_at()` chia chuỗi thành 2 phần tại 1 vị trí nhất định, cho nên trả về Tuple.  
+```bash
+iex(6)> String.split("hello beautiful world")
+["hello", "beautiful", "world"]
+iex(7)> String.split_at("hello world", 3)
+{"hel", "lo world"}
+```
+
+Tuple thường kết hợp với atom để tạo thành "tagged tuples" để trả về kết quả thành công hay thất bại.  
+```bash
+iex> File.read("path/to/existing/file")
+{:ok, "... contents ..."}
+iex> File.read("path/to/unknown/file")
+{:error, :enoent}
+```
+Tuple thì hỗ trợ truy suất ngẫu nhiên còn List thì phải duyệt danh sách từ phần tử đầu tiên.  
+
+## Size or length?
+Khi đếm các phần tử của 1 cấu trúc dữ liệu, Elixir tuân theo quy tắc: hàm `size` nếu phép toán diễn ra theo thời gian không đổi (giá trị được tính toán trước) và `length` nếu phép toán là tuyến tính (tính toán sẽ chậm nếu đầu vào tăng, --> ghi nhớ: `length` và `linear` đều bắt đầu bằng `l`).  
+Ví dụ: `byte_size()`, `tuple_size()`, `length()` và `String.length()`.  
 
