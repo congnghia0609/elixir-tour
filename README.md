@@ -2,6 +2,7 @@
 elixir-tour is a cheat sheet, quick reference to learn elixir programming  
 
 # Install Elixir
+Ref: [https://elixir-lang.org/install.html](https://elixir-lang.org/install.html)
 ```bash
 # Ngay 24/01/2025 on Ubuntu 22.04
 # https://apollin.com/how-to-install-elixir-on-ubuntu-22-using-asdf/
@@ -111,6 +112,7 @@ Elixir 1.18.2 (compiled with Erlang/OTP 27)
 ```
 
 # Install Phoenix
+Ref: [https://hexdocs.pm/phoenix/installation.html](https://hexdocs.pm/phoenix/installation.html)
 ```bash
 # https://hexdocs.pm/phoenix/installation.html
 # Install the Phoenix application generator:
