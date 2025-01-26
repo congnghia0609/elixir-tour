@@ -177,3 +177,130 @@ iex -S mix phx.server
 - VSCode + plugin ElixirLS  
 
 # Elixir Programing
+Ref: [https://hexdocs.pm/elixir/introduction.html](https://hexdocs.pm/elixir/introduction.html)  
+
+## Interactive mode
+When you install Elixir, you will have three new command line executables: `iex`, `elixir` and `elixirc`.  
+`iex` is a PowerShell command, the same `python`.  
+To exit `iex` press `Ctrl+C` twice.  
+```bash
+$ iex
+Erlang/OTP 27 [erts-15.2.1] [source] [64-bit] [smp:16:16] [ds:16:16:10] [async-threads:1] [jit:ns]
+
+Interactive Elixir (1.18.2) - press Ctrl+C to exit (type h() ENTER for help)
+iex(1)> 40 + 2
+42
+iex(2)> "hello" <> " world"
+"hello world"
+```
+
+## Running scripts
+To execute file `simple.exs` with `elixir`:
+```bash
+elixir simple.exs
+```
+
+## Basic types
+Elixir basic types: integers, floats, booleans, atoms, strings, lists and tuples.  
+
+## Basic arithmetic
+```bash
+1          # integer
+0x1F       # integer
+1.0        # float
+true       # boolean
+:atom      # atom / symbol
+"elixir"   # string
+[1, 2, 3]  # list
+{1, 2, 3}  # tuple
+```
+
+## Basic arithmetic
+Lưu ý toán tử `/` luôn trả về kiểu float.  
+Để thực hiện phép chia trả về số integer và phần dư  
+của phép chia thì dùng hàm `div` và `rem`  
+Khi gọi hàm function có thể bỏ qua dấu ngoặc đơn,  
+nhưng khuyến khích để dấu ngoặc cho dễ đọc code hơn.  
+```bash
+iex(1)> 1 + 2
+3
+iex(2)> 5 * 5
+25
+iex(3)> 10 / 2
+5.0
+iex(4)> div(10,2)
+5
+iex(5)> div 10, 2
+5
+iex(6)> rem 10, 3
+1
+```
+
+Elixir cung cấp các ký hiệu phím tắt (shortcut) cho các số nhị phân, bát phân và thập lục phân.  
+```bash
+iex(7)> 0b1010
+10
+iex(8)> 0o777
+511
+iex(9)> 0x1F
+31
+```
+
+Kiểu float trong Elixir có độ chính xác 64-bit.  
+```bash
+iex(10)> 1.0
+1.0
+iex(11)> 1.0e-10
+1.0e-10
+```
+
+Hàm `round` dùng để lấy số nguyên integer gần số thực float nhất.  
+Hàm `trunc` dùng để lấy phần nguyên của số thực float.  
+```bash
+iex(12)> round(3.58)
+4
+iex(13)> trunc(3.58)
+3
+```
+
+Hàm `is_integer` dùng để kiểm tra giá trị có phải là số nguyên integer hay không.  
+```bash
+iex(14)> is_integer(1)
+true
+iex(15)> is_integer(2.0)
+false
+```
+Hàm `is_float` dùng để kiểm tra số thực float.  
+Hàm `is_number` dùng để kiểm tra số nguyên hoặc số thực float.  
+
+## Toán tử logic Booleans and nil
+Các toán tử boolean: `or`, `and`, and `not`, được sử dụng nghiêm ngặt với các biểu thức cho ra giá trị boolean (`true` or `false`).  
+`nil` là để chỉ sự vắng ma7t5 1 giá trị.  
+`false` và `nil` được coi là sai, tất cả các giá trị khác được coi là đúng.  
+Trình tự đánh giá các biểu thức từ trái sang phải.  
+```bash
+# or
+iex(16)> 1 || true 
+1
+iex(17)> false || 11 
+11
+
+# and
+iex(18)> nil && 13 
+nil
+iex(19)> true && 17 
+17
+
+# not
+iex(20)> !true 
+false
+iex(21)> !1 
+false
+iex(22)> !nil 
+true
+```
+
+Các giá trị `0` và `""` trong các ngôn ngữ khác là sai, nhưng với Elixir là đúng.  
+Tóm lại, sử dụng `and`, `or` và `not` với giá trị booleans, nếu bất kỳ biểu thức nào không phải bool (non-boolean) thì phải sử dụng: `&&`, `||` và `!`.  
+
+
