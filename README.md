@@ -605,7 +605,7 @@ iex> {y, ^x} = {2, 2}
 ** (MatchError) no match of right hand side value: {2, 2}
 ```
 
-Trong 1 số trường hợp, bạn không quan tâm đến 1 giá trị cụ thể trong mẫu thì ta dùng dấu gạch dưới (underscore) `_` để thay thế, ví du:  
+Trong 1 số trường hợp, bạn không quan tâm đến 1 giá trị cụ thể trong mẫu thì ta dùng dấu gạch dưới (underscore) `_` để thay thế, ví dụ:  
 ```bash
 iex> [head | _] = [1, 2, 3]
 [1, 2, 3]
@@ -613,7 +613,90 @@ iex> head
 1
 ```
 
+## Control flow: case, cond, and if
+### Case
+`case` cho phép chúng ta so sánh 1 giá trị với nhiều mẫu cho đến khi tìm thấy giá trị phủ hợp:  
+```bash
+iex(1)> case {1, 2, 3} do 
+...(1)> {4, 5, 6} -> 
+...(1)> "This clause won't match"
+...(1)> {1, x, 3} -> 
+...(1)> "This clause will match and bind x to 2 in this clause"
+...(1)> _ -> 
+...(1)> "This cloase would match any value"
+...(1)> end 
+"This clause will match and bind x to 2 in this clause"
+```
 
+Nếu muốn khớp mẫu với một biến đã có ta dùng toán tử ghim `^`:  
+```bash
+iex(2)> x = 1 
+1
+iex(3)> case 10 do 
+...(3)> ^x -> "Won't match"
+...(3)> _ -> "Will match"
+...(3)> end
+"Will match"
+```
 
+Mệnh đề cũng cho phép các điều kiện bổ sung như:  
+```bash
+iex(4)> case {1, 2, 3} do 
+...(4)> {1, x, 3} when x > 0 -> "Will match"
+...(4)> _ -> "Would match, if guard condition were not satisfied"
+...(4)> end
+"Will match"
+```
+
+### if
+`if` là một macro trong Elixir, Cú pháp:  
+```bash
+iex(5)> if nil do 
+...(5)> "This won't be seen"
+...(5)> else 
+...(5)> "This will"
+...(5)> end
+"This will"
+```
+
+Nếu bất kỳ biến hay cấu trúc nào được khai báo hoặc thay đổi bên trong `if`, `case` thì việc khai báo và thay đổi sẽ chỉ có hiệu lực bên trong phạm vi của `if`, `case` thôi, ví dụ:  
+```bash
+iex(6)> x = 1
+1
+iex(7)> if true do 
+...(7)> x = x + 1 
+...(7)> end
+2
+iex(8)> x
+1
+```
+
+Trong trường hợp đó, nếu bạn muốn thay đổi giá trị, bạn phải trả về giá trị từ `if`:  
+```bash
+iex(9)> x = 1
+1
+iex(10)> x = if true do 
+...(10)> x + 1 
+...(10)> else 
+...(10)> x 
+...(10)> end
+2
+iex(11)> x
+2
+```
+
+Nếu bạn có quá nhiều khối lệnh `if` lồng nhau, thì bạn nên sử dụng `cond` thay thế.  
+
+### cond
+Nếu `case` dùng để khớp mệnh đề nhiều mẫu, còn `if` thì kiểm tra 1 điều kiện duy nhất, thì `cond` là cấu trúc hữu ích giúp bạn kiểm tra nhiều điều kiện để trả về giá trị đầu tiên khác `nil` hoặc `false`, ví dụ:  
+```bash
+iex(1)> cond do 
+...(1)> 2 + 2 == 5 -> "This will not be true"
+...(1)> 2 * 2 == 3 -> "Nor this"
+...(1)> 1 + 1 == 2 -> "But this will"
+...(1)> true -> "This is always true (equivalent to else)"
+...(1)> end
+"But this will"
+```
 
 
