@@ -303,4 +303,89 @@ true
 Các giá trị `0` và `""` trong các ngôn ngữ khác là sai, nhưng với Elixir là đúng.  
 Tóm lại, sử dụng `and`, `or` và `not` với giá trị booleans, nếu bất kỳ biểu thức nào không phải bool (non-boolean) thì phải sử dụng: `&&`, `||` và `!`.  
 
+## Atoms
+atom là 1 hằng số mà giá trị chính là tên riêng của nó. Các ngôn ngữ khác gọi là symbol. Chúng thường hữu ích để liệt kê các giá trị riêng biệt.  
+```bash
+iex(1)> :apple 
+:apple
+iex(2)> :orange 
+:orange
+iex(3)> :apple == :apple 
+true
+iex(4)> :apple == :orange 
+false
+```
+atom thường được dùng để thể hiện trạng thái của toán tử, bằng cách sử dụng các giá trị như: `:ok` và `:error`.  
+Giá trị `nil`, `true` và `false` cũng là các atom. Elixir cho phép bỏ qua dấu `:` với các atom: `nil`, `true` và `false`.  
+```bash
+iex(5)> true == :true 
+true
+iex(6)> is_atom(false)
+true
+iex(7)> is_boolean(:false) 
+true
+iex(8)> is_atom(nil)
+true
+```
+
+## Chuỗi Strings
+Strings trong Elixir được phân cách bằng dấu nháy kép `""` và được mã hóa theo UTF-8.  
+```bash
+iex(10)> "Chào"
+"Chào"
+iex(11)> "Chào" <> " thế giới!"
+"Chào thế giới!"
+```
+Nối chuỗi bằng phương pháp nội suy, hỗ trợ bất kỳ dữ liệu nào có thể chuyển đổi thành chuỗi:  
+```bash
+iex(12)> number = 42 
+42
+iex(13)> "i am #{number} years old"
+"i am 42 years old"
+```
+Chuỗi có thể xuống dòng trong dấu nháy kép `""`, hoặc dùng ký tự xuống dòng `\n`  
+```bash
+iex(14)> "hello
+...(14)> world"
+"hello\nworld"
+iex(15)> "hello\nworld"
+"hello\nworld"
+```
+
+Có thể in chuỗi bằng `IO.puts()` và trả về atom `:ok` sau khi in.  
+```bash
+iex(16)> IO.puts("hello\nworld")
+hello
+world
+:ok
+```
+
+Chuỗi trong Elixir được biểu diễn nội bộ bằng các chuỗi byte nhị phân liền kề:  
+```bash
+iex(17)> is_binary("chào")
+true
+iex(18)> byte_size("chào")
+5 # Ký tự `à` cần 2 byte để biểu diễn trong UTF-8
+iex(19)> byte_size("chao")
+4
+iex(20)> String.length("chào")
+4
+iex(21)> String.upcase("chào")
+"CHÀO"
+```
+
+## Structural comparison
+Elixir cung cấp các toán tử so sánh: `==`, `!=`, `<=`, `>=`, `<`, `>`.  
+Số nguyên integer và số thực float là giống nhau nếu chúng có cùng giá trị.  
+Các toán tử so sánh nghiêm ngặt về kiểu dữ liệu: `===` và `!==`.  
+Các toàn tử so sánh trong Elixir có thể so sánh mọi kiểu dữ liệu.  
+```bash
+iex(1)> 1 == 1.0 
+true
+iex(2)> 1 == 2.0 
+false
+iex(3)> 1 === 1.0 
+false
+```
+
 
