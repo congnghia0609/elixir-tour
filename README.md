@@ -614,8 +614,8 @@ iex> head
 ```
 
 ## Control flow: case, cond, and if
-### Case
-`case` cho phép chúng ta so sánh 1 giá trị với nhiều mẫu cho đến khi tìm thấy giá trị phủ hợp:  
+### case
+`case` cho phép chúng ta so sánh 1 giá trị với nhiều mẫu cho đến khi tìm thấy giá trị phù hợp:  
 ```bash
 iex(1)> case {1, 2, 3} do 
 ...(1)> {4, 5, 6} -> 
@@ -698,5 +698,102 @@ iex(1)> cond do
 ...(1)> end
 "But this will"
 ```
+
+## Anonymous functions (Hàm ẩn danh)
+Hàm ẩn danh cho phép chúng ta lưu trữ và truyền mã code thực thi như thề nó là 1 số nguyên hoặc chuỗi.  
+
+### Identifying functions and documentation (Định danh hàm và tài liệu)
+Hàm function trong Elixir được định danh bằng tên và số lượng đối số (arity) của hàm. `trunc/1` định danh 1 hàm có tên và `trunc` và nhận 1 đối số, trong khi `trunc/2` định danh 1 hàm hợp lệ khác có cùng tên nhưng số lượng đối số (arity) là 2.  
+Trong Elixir shell ta dùng `h trunc/1` để in ra tài liệu mô tả cho hàm `trunc/1`.  
+
+### Defining anonymous functions (Định nghĩa hàm ẩn danh)
+Hàm ẩn danh trong Elixir được phân định bằng từ khóa `fn` và `end`. Chúng ta có thể gọi hàm ẩn danh cách truyền đối số cho nó sử dụng dấu chấm `.` giữa biến và dấu ngoặc đơn:  
+```bash
+iex(2)> add = fn a, b -> a + b end 
+#Function<41.18682967/2 in :erl_eval.expr/6>
+iex(3)> add.(1, 2)
+3
+iex(4)> is_function(add)
+true
+iex(5)> is_function(add, 2)
+true
+iex(6)> is_function(add, 1)
+false
+```
+Dấu chấm `.` giúp phân biệt rõ ràng khi gọi hàm ẩn danh được lưu trữ trong biến `add`, trái ngược với 1 hàm có tên `add/2`. Ví dụ, 1 hàm ẩn danh đuọc lưu trữ trong biến `is_atom` sẽ không có sự mơ hồ giữa `is_atom.(:foo)` và `is_atom(:foo)`. Dùng `is_function()` để kiểm tra 1 biến có phải là hàm hay không.  
+
+### Closures
+Hàm ẩn danh cũng có thể truy cập các biến nằm trong phạm vi khi hàm được định nghĩa, gọi là closures vì nó đóng trong phạm vi của nó.  
+```bash
+iex(7)> double = fn a -> add.(a, a) end 
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(8)> double.(2)
+4
+```
+Một biến được gán trong hàm không ảnh hưởng đến bên ngoài.  
+```bash
+iex(9)> x = 42
+42
+iex(10)> (fn -> x = 0 end).()
+0
+iex(11)> x
+42
+```
+
+### Clauses and guards (mệnh đề và lính canh)
+Tương tự như `case/2` chúng ta có thể khớp mẫu trên các đối số của các hàm ẩn danh cũng như định nghĩa nhiều mệnh đề và lính canh.  
+```bash
+iex(12)> f = fn 
+...(12)> x, y when x > 0 -> x + y 
+...(12)> x, y -> x * y 
+...(12)> end 
+#Function<41.18682967/2 in :erl_eval.expr/6>
+iex(13)> f.(1, 3)
+4
+iex(14)> f.(-1, 3)
+-3
+```
+
+### The capture operator (Toán tử bắt địa chỉ)
+Ký hiệu `name/anity` định danh hàm có thể được dùng để bắt địa chỉ hàm đã có thành 1 kiểu dữ liệu để truyền đi, tương tự như hàm ẩn danh hoạt động.  
+Sau khi bắt địa chỉ hàm, chúng ta có thể truyền nó làm tham số hoặc gọi nó bằng cách sử dụng ký hiệu hàm ẩn danh, lẫn hàm định nghĩa trong các mô đun modules.  
+```bash
+iex(15)> fun = &String.length/1
+&String.length/1
+iex(16)> fun.("hello")
+5
+iex(17)> add = &+/2
+&:erlang.+/2
+iex(18)> add.(1, 2)
+3
+```
+Toán tử trong Elixir cũng là hàm, cho nên chúng ta cũng có thể bắt địa chỉ toán tử.  
+
+Cú pháp bắt địa chỉ (capture) cũng có thể sử dụng như phím tắt shortcut để tạo các hàm bao bọc các hàm hiện có. Ví dụ, hàm khiểm tra số lượng đối số:  
+```bash
+iex(19)> is_arity_2 = fn fun -> is_function(fun, 2) end
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(20)> is_arity_2.(add)
+true
+iex(21)> is_arity_2 = &is_function(&1, 2)
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(22)> is_arity_2.(add)
+true
+```
+`&1` biểu thị đối số đầu tiên được truyền vào hàm. 2 cách định nghĩa trên tương đương nhau.  
+
+Toán tử bắt địa chỉ capture cũng hoạt động với toán tử và chuỗi nội suy.  
+```bash
+iex(24)> fun = &(&1 + 1)  # the same as fn x -> x + 1 end
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(25)> fun.(1)
+2
+iex(26)> fun2 = &"Good #{&1}"
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(27)> fun2.("morning")
+"Good morning"
+```
+
+
 
 
