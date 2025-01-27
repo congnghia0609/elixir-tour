@@ -794,6 +794,141 @@ iex(27)> fun2.("morning")
 "Good morning"
 ```
 
+## Binaries, strings, and charlists (Nhị phân, chuỗi và danh sách ký tự)
+### Unicode and Code Points
+Unicode là 1 bảng mã được thống nhất giữa các hệ thống máy tính, chứa tất cả các ký tự hình thành biểu đồ mã, mỗi ký tự được cấp 1 chỉ số duy nhất gọi là điểm mã (Code Point).  
+Trong Elixir, dùng `?` trước 1 ký tự để biết điểm mã Code Point, thường được biễu diễn dưới dạng thập lục phân.  
+```bash
+iex(1)> ?a 
+97
+iex(2)> ?$
+36
+iex(3)> "\u0061" == "a"
+true
+iex(4)> 0x0061 = 97 = ?a 
+97
+```
+### UTF-8 and Encodings
+Trong khi Code Point là thứ chúng ta lưu trữ thì encoding là cách chúng ta lưu trữ nó, encoding là 1 cách triển khai. Tức là, chúng ta cần 1 cơ chế để chuyển đổi số Code Point thành bytes để có thể lưu trữ trong bộ nhớ, ghi vào ổ cứng...  
+Elixir sử dụng UTF-8 để mã hóa chuỗi, các điểm mã code point được mã hóa thành một chuỗi byte 8-bit. UTF-8 là mã hóa ký tự có độ rộng thay đổi, sử dụng từ 1 đên 14 bytes để lưu trữ mỗi điểm mã code point thuộc Unicode.  
+```bash
+iex(5)> string  = "chào"
+"chào"
+iex(6)> String.length(string)
+4
+iex(7)> byte_size(string)
+5
+```
+Chuỗi `chào` có 4 ký tự và sử dụng 5 bytes, vì dùng 2 bytes để biểu diễn ký tự `à`.  
+Dùng `IO.inspect("", binaries: :as_binaries)` để xem biểu diễn nhị phân của chuỗi.  
+```bash
+iex(8)> IO.inspect("hello", binaries: :as_binaries)
+<<104, 101, 108, 108, 111>>
+"hello"
+```
+`<<0>>` là null byte.  
+
+
+### Bitstrings (Chuỗi bit)
+Bitstring là 1 kiểu dữ liệu cơ bản trong Elixir, được biểu thị bằng cú pháp `<<>>`, một bitstring là 1 chuỗi bit liên tiếp trong bộ nhớ.  
+Mặc định 8bits (1 byte) được dùng để lưu trữ mỗi số trong bitstring, nhưng chúng ta có thể dùng cú pháp `::n` để điều chỉnh số lượng n bit.  
+```bash
+iex(9)> <<42>> == <<42::8>>
+true
+iex(10)> <<3::4>>
+<<3::size(4)>>
+iex(11)> <<0::1, 0::1, 1::1, 1::1>> == <<3::4>>
+true
+iex(12)> <<1>> == <<257>>
+true
+```
+Số `3` được biểu diễn nhị phân là `0011`.  
+Bất kỳ giá trị nào vượt quá số bit được cung cấp để lưu trữ sẽ bị cắt bỏ (tràn bit).  
+
+### Binaries
+Binaries là 1 bitstring có số lượng bit chia hết cho 8, tức là mọi binary đều là bitstring, nhưng không phải mọi bitstring đều là binary. Dùng hàm `is_bitstring/1` và `is_binary/1` để kiểm tra.  
+```bash
+iex(13)> is_bitstring(<<3::4>>)
+true
+iex(14)> is_binary(<<3::4>>)
+false
+iex(15)> is_binary(<<42::16>>)
+true
+```
+Có thể dùng khớp mẫu (pattern match) cho binay và bitstring.  
+```bash
+iex(16)> <<0, 1, x>> = <<0, 1, 2>>
+<<0, 1, 2>>
+iex(17)> x
+2
+iex(18)> <<0, 1, x::binary>> = <<0, 1, 2, 3>>
+<<0, 1, 2, 3>>
+iex(19)> x
+<<2, 3>>
+iex(20)> <<head::binary-size(2), rest::binary>> = <<0, 1, 2, 3>>
+<<0, 1, 2, 3>>
+iex(21)> head 
+<<0, 1>>
+iex(22)> rest 
+<<2, 3>>
+```
+
+string là một UTF-8 encoded binary (mã nhị phân được mã hóa UTF-8), trong đó, mỗi điểm mã code point cho mỗi ký tự được mã hóa từ 1 đến 4 byte. Do đó, mọi string đều là binary, nhưng mọi binary trong UTF-8 thì chưa chắc là string hợp lệ.  
+Toán tử `<>` có thể được dùng để nối 2 binary.  
+string là binary nên có thể dùng khớp mẫu trên string.  
+```bash
+iex(23)> <<head, rest::binary>> = "banana"
+"banana"
+iex(24)> head == ?b 
+true
+iex(25)> rest
+"anana"
+```
+
+Nhưng lưu ý là khớp mẫu binary làm việc trên bite, do đó với ký tự nhiều byte thì sẽ không khớp trên ký tự, mà khớp trên byte đầu tiên của ký tự đó. Vì vậy, khi so khớp mẫu trên string cần sử dụng với ký hiệu `::utf8`.  
+```bash
+iex(26)> <<x, rest::binary>> = "über"
+"über"
+iex(27)> x == ?ü
+false
+iex(28)> rest 
+<<188, 98, 101, 114>>
+iex(29)> <<x::utf8, rest::binary>> = "über"
+"über"
+iex(30)> x == ?ü
+true
+iex(31)> rest 
+"ber"
+```
+
+### Charlists (danh sách ký tự)
+charlist là danh sách các số nguyên trong đó tất cả các số nguyên đều là điểm mã code point hợp lệ. Hay gặp trong 1 số tình huống cụ thể như giao tiếp với các thư viện Erlang cũ không chấp nhận binary làm tham số. Dấu ấn (sigil) `~c` cho biết rằng chúng ta đang xử lý 1 charlist chứ không phải 1 chuỗi string thông thường. Thay vì chứa byte, charlist chứa các điểm mã nguyên code point integer. Tuy nhiên, danh sách chỉ được in dưới dạng dấu ấn sigil nếu tất cả các điểm mã code point nằm trong phạm vi ASCII.  
+``` bash
+iex(32)> ~c"hello"
+~c"hello"
+iex(33)> ~c"hełło"
+[104, 101, 322, 322, 111]
+iex(34)> is_list(~c"hełło")
+true
+```
+2 Hàm `to_string/1` và `to_charlist/1` để chuyển đổi charlist thành string và ngược lại.  
+```bash
+iex(35)> to_charlist("hełło")
+[104, 101, 322, 322, 111]
+iex(36)> to_string(~c"hełło")
+"hełło"
+iex(37)> to_string(:hello)
+"hello"
+iex(38)> to_string(1)
+"1"
+```
+Việc nối chuỗi string(binary) sử dụng toán tử `<>`, còn nối charlist(bản chất là list) thì dùng `++`.  
+```bash
+iex(39)> ~c"this " ++ ~c"works"
+~c"this works"
+iex(40)> "he" <> "llo"
+"hello"
+```
 
 
 
