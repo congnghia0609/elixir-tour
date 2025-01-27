@@ -930,5 +930,115 @@ iex(40)> "he" <> "llo"
 "hello"
 ```
 
+## Keyword lists and maps
+Trong Elixir có 2 cấu trúc dữ liệu liên kết k-v là keyword list và map.  
+
+### Keyword lists (danh sách từ khóa)
+Keyword lists Danh sách từ khóa chủ yếu được sử dụng làm đối số tùy chọn cho hàm.  
+Ví dụ, ta cần chia tách 1 string các số nguyên integer, mỗi số cách nhau 2 khoảng trắng (space):  
+```bash
+iex(1)> String.split("1  2  3", " ", [trim: true])
+["1", "2", "3"]
+iex(2)> String.split("1  2  3", " ", [trim: true, parts: 2])
+["1", " 2  3"]
+iex(3)> String.split("1  2  3", " ", trim: true, parts: 2)
+["1", " 2  3"]
+iex(4)> [{:trim, true}, {:parts, 2}] == [trim: true, parts: 2]
+true
+```
+Trong đó, `[trim: true]` và `[trim: true, parts: 2]` là Keyword lists Danh sách từ khóa, nếu keyword lists là đối số cuối cùng của hàm thì có thể bỏ qua dấu ngoặc vuông.  
+
+Keyword lists là quan trọng vì chúng có 3 đặc điểm đặc biệt:  
+- Keys phải là atoms.
+- Keys là có thứ tự, do lập trình viên quyết định.
+- Keys có thể được cấp nhiều lần.
+Keyword lists là list, cho nên ta có thể dùng các toán tử `++` để thêm giá trị mới.  
+
+### Maps as key-value pairs
+Một map được tạo bằng cú pháp `%{}`.  
+```bash
+iex(5)> map = %{:a => 1, 2 => :b}
+%{2 => :b, :a => 1}
+iex(6)> map[:a]
+1
+iex(7)> map[2]
+:b
+iex(8)> map[:c]
+nil
+```
+
+So với keyword lists, thì map có 2 điểm khác biệt:  
+- Map cho phép bất kỳ giá trị nào làm key.
+- Map có thứ tự nội bộ riêng, không đảm bảo thứ tự này sẽ giống nhau ngay cả khi chúng có cùng tập keys.
+
+Map rất hữu dụng với việc khớp mẫu pattern matching, trả về tập con.  
+```bash
+iex> %{} = %{:a => 1, 2 => :b}
+%{2 => :b, :a => 1}
+iex> %{:a => a} = %{:a => 1, 2 => :b}
+%{2 => :b, :a => 1}
+iex> a
+1
+iex> %{:c => c} = %{:a => 1, 2 => :b}
+** (MatchError) no match of right hand side value: %{2 => :b, :a => 1}
+```
+Một map rỗng `%{}` khớp với tất cả các map.  
+
+Map cung cấp nhiều API để thêm, xóa, cập nhật.  
+```bash
+iex(9)> Map.get(%{:a => 1, 2 => :b}, :a)
+1
+iex(10)> Map.put(%{:a => 1, 2 => :b}, :c, 3)
+%{2 => :b, :c => 3, :a => 1}
+iex(11)> Map.to_list(%{:a => 1, 2 => :b})
+[{2, :b}, {:a, 1}]
+```
+
+### Maps of predefined keys
+Mếu map sử dụng key là atom thì chúng ta có thể sử dụng cú pháp `map.key` để truy suất value.  
+```bash
+iex(12)> map = %{:name => "John", :age => 23}
+%{name: "John", age: 23}
+iex(13)> map = %{name: "John", age: 23}
+%{name: "John", age: 23}
+iex(14)> map.name
+"John"
+iex(15)> map.agee 
+** (KeyError) key :agee not found in: %{name: "John", age: 23}.
+```
+
+Cú pháp cập nhật key, nếu key chưa tồn tại sẽ gây ra lỗi:  
+```bash
+iex(15)> %{map | name: "Mary"}
+%{name: "Mary", age: 23}
+iex(16)> %{map | agee: 27}
+** (KeyError) key :agee not found in: %{name: "John", age: 23}.
+```
+
+### Nested data structures (Cấu trúc lồng nhau)
+Trong thực tế ta hay gặp các trường hợp map nằm trong map, hoặc keyword list nằm trong map, và lồng nhiều cấp... Ví dụ:  
+```bash
+iex(17)> users = [
+...(17)>   john: %{name: "John", age: 27, languages: ["Erlang", "Ruby", "Elixir"]},
+...(17)>   mary: %{name: "Mary", age: 29, languages: ["Elixir", "F#", "Clojure"]}
+...(17)> ]
+[
+  john: %{name: "John", age: 27, languages: ["Erlang", "Ruby", "Elixir"]},
+  mary: %{name: "Mary", age: 29, languages: ["Elixir", "F#", "Clojure"]}
+]
+iex(18)> users[:john].age
+27
+iex(19)> users = put_in(users[:john].age, 31)
+[
+  john: %{name: "John", age: 31, languages: ["Erlang", "Ruby", "Elixir"]},
+  mary: %{name: "Mary", age: 29, languages: ["Elixir", "F#", "Clojure"]}
+]
+iex(20)> users = update_in(users[:mary].languages, fn languages -> List.delete(languages, "Clojure") end)
+[
+  john: %{name: "John", age: 31, languages: ["Erlang", "Ruby", "Elixir"]},
+  mary: %{name: "Mary", age: 29, languages: ["Elixir", "F#"]}
+]
+```
+
 
 
