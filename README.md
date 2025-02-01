@@ -1143,6 +1143,78 @@ IO.puts(Concat.join("Hello", "world", "_")) #=> Hello_world
 Khi 1 biến không được sử dụng bới 1 hàm hoặc mệnh đề, chúng ta cần thêm dấu gạch dưới `_` vào tên của nó để báo hiệu ý định này.  
 
 
+## Recursion (Đệ quy)
+### Loops through recursion (Vòng lặp thông qua đệ quy)
+Do tính bất biến (immutability), mà Elixir không có vòng lặp như các ngôn ngữ khác, vì vậy vòng lặp trong ngôn ngữ hàm (function languages) dựa trên đệ quy: 1 hàm được gọi đệ quy cho đến khi gặp phải điều kiện chặn. Không có dữ liệu nào bị thay đổi trong quá trình này. Ví dụ in chuỗi nhiều lần dưới đây:  
+```bash
+defmodule Recursion do
+  def print_multiple_times(msg, n) when n > 0 do
+    IO.puts(msg)
+    print_multiple_times(msg, n - 1)
+  end
+
+  def print_multiple_times(_msg, 0) do
+    :ok
+  end
+end
+
+Recursion.print_multiple_times("Hello!", 3)
+# Hello!
+# Hello!
+# Hello!
+:ok
+```
+Tương tự như `case`, 1 hàm có thể có nhiều mệnh đề, 1 mệnh để được thực thi khi các đối số được truyền vào hàm khớp với các mẫu đối số và guards của nó được đánh giá là `true`.  
+
+
+### Reduce and map algorithms (Thuật toán Reduce & map)
+Cùng khám phá sức mạnh của đệ quy để tính tổng 1 danhs sách số:  
+```bash
+defmodule Math do
+  def sum_list([head | tail], accumulator) do
+    sum_list(tail, head + accumulator)
+  end
+
+  def sum_list([], accumulator) do
+    accumulator
+  end
+end
+
+IO.puts Math.sum_list([1, 2, 3], 0) #=> 6
+```
+Quá trình lấy 1 danh sách và rút gọn thành 1 giá trị gọi là thuật toán rút gọn reduce algorithm, và đóng vai trò trung tâm của lập trình hàm.  
+
+
+Nếu ta muốn nhân đôi mỗi giá trị trong danh sách thì sao?  
+```bash
+defmodule Math do
+  def double_each([head | tail]) do
+    [head * 2 | double_each(tail)]
+  end
+
+  def double_each([]) do
+    []
+  end
+end
+
+Math.double_each([1, 2, 3]) #=> [2, 4, 6]
+```
+Quá trình lấy 1 danh sách và ánh xạ mapping trên danh sách đó được gọi là thuật toán ánh xạ map algorithm.  
+Đệ quy và tối ưu hóa lệnh gọi tail là 1 phần quan trọng của Elixir và thường được sử dụng để tạo vòng lặp, tuy nhiên trong thực tế hiếm khi sử dụng đệ quy như trên để thao tác danh sách.  
+Module `Enum` sẽ cung cấp nhiều tiện ích để làm việc với sanh sách, ví dụ:  
+```bash
+iex(1)> Enum.reduce([1, 2, 3], 0, fn x, acc -> x + acc end)
+6
+iex(2)> Enum.map([1, 2, 3], fn x -> x * 2 end)
+[2, 4, 6]
+```
+Hoặc sử dụng cú pháp chụp capture systax:
+```bash
+iex(1)> Enum.reduce([1, 2, 3], 0, &+/2)
+6
+iex(2)> Enum.map([1, 2, 3], &(&1 * 2))
+[2, 4, 6]
+```
 
 
 
