@@ -1040,5 +1040,110 @@ iex(20)> users = update_in(users[:mary].languages, fn languages -> List.delete(l
 ]
 ```
 
+## Modules and functions (Mô đun và Hàm)
+Để tạo Module trong Elixir, ta dùng macro `defmodule`, chử4 cái đầu tiên của Module phải viết hoa, còn chữ cái đầu tiên của các hàm trong Module phải viết thường hoặc gạch dưới (underscore):  
+```bash
+iex(1)> defmodule Math do
+...(1)>   def sum(a, b) do
+...(1)>     a + b
+...(1)>   end
+...(1)> end
+{:module, Math,
+ <<70, 79, 82, 49, 0, 0, 5, 228, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 168,
+   0, 0, 0, 18, 11, 69, 108, 105, 120, 105, 114, 46, 77, 97, 116, 104, 8, 95,
+   95, 105, 110, 102, 111, 95, 95, 10, 97, ...>>, {:sum, 2}}
+iex(2)> Math.sum(1, 2)
+3
+```
+
+### Compilation (Biên dịch)
+Tập tin code `math.ex` có thể được biên bằng `elixirc`, để tạo ra file `Elixir.Math.beam` chứa mã bytecode của mudole, nếu ta chạy dòng lệnh `iex` cùng cấp với file này thì sử dụng được module này: 
+```bash
+# file math.ex
+defmodule Math do
+  def sum(a, b) do
+    a + b
+  end
+end
+
+elixirc math.ex
+
+iex(1)> Math.sum(1, 2)
+3
+```
+
+### Scripting mode (Chố độ viết kịch bản)
+Ngoài phần mở rộng tập tin `.ex`, Elixir còn hỗ trợ tập tin `.exs` để viết tập lệnh scripting. Elixir xử lý cả 2 tệp theo cùng 1 cách, điểm khác nhau là tệp `.ex` dùng để biên dịch, trong khi tệp `.exs` dùng để viết tập lệnh scripting. Quy ước này được tuân theo bời các dự án như `mix`.  
+Chúng ta có thể tạo ra tệp `math.exs` rồi thực thi nó bằng cách: `elixir math.exs`. Việc dùng `elixir` thay cho `elixirc` là để module được biên dịch và tải vào bộ nhớ, nhưng không có tệp `.beam` nào được ghi vào ổ đĩa.  
+Dự án Elixir thường được tổ chức thành 3 thư mục:
+- `_build`: chứa các hiện vật biên dịch
+- `lib`: chứa mã Elixir (thường là file `.ex`)
+- `test`: chứa các file kiểm tra (thường là file `.exs`)
+Khi làm việc các dự án thực tế, công cụ build có tên là `mix` sẽ chịu trách nhiệm biên dịch và thiết lập các đường dẫn phù hợp cho bạn.  
+
+### Function definition (Định nghĩa hàm)
+Trong module, chúng ta có thể định nghĩa hàm công cộng (public) với `def/2` và các hàm nội bộ (private - riêng) với `defp/2`.  
+Khai báo hàm cũng hỗ trợ tính guards (bảo vệ) và đa hình (multiple clauses), nếu 1 hàm có nhiều mệnh đề, Elixir sẽ thử từng mệnh đề cho đến khi tìm thấy 1 mệnh đề khớp. Ví dụ hàm check số 0 sau:  
+```bash
+defmodule Math do
+  def zero?(0) do
+    true
+  end
+
+  def zero?(x) when is_integer(x) do
+    false
+  end
+end
+
+IO.puts Math.zero?(0)         #=> true
+IO.puts Math.zero?(1)         #=> false
+IO.puts Math.zero?([1, 2, 3]) #=> ** (FunctionClauseError)
+IO.puts Math.zero?(0.0)       #=> ** (FunctionClauseError)
+```
+Dấu chấm hỏi `zero?` có nghĩa là hàm này trả về giá trị bool.  
+Giống như `if`, định nghĩa hàm cũng hỗ trợ cả cú pháp `do:` (viết 1 dòng) và `do`-block (khối lệnh nhiều dòng). Ví dụ hàm trên có thể viết lại như sau:  
+```bash
+defmodule Math do
+  def zero?(0), do: true
+  def zero?(x) when is_integer(x), do: false
+end
+```
+
+### Default arguments (Đối số mặc định)
+Định nghĩa hàm trong Elixir cũng hỗ trợ đối số mặc định:
+```bash
+defmodule Concat do
+  def join(a, b, sep \\ " ") do
+    a <> sep <> b
+  end
+end
+
+IO.puts(Concat.join("Hello", "world"))      #=> Hello world
+IO.puts(Concat.join("Hello", "world", "_")) #=> Hello_world
+```
+Nếu sử dụng đối số mặc định cho hàm có nhiều biến thể thì ta cần tạo ra 1 đầu hàm không có thân hàm để khai báo, ví dụ:  
+```bash
+defmodule Concat do
+  # A function head declaring defaults
+  def join(a, b, sep \\ " ")
+
+  def join(a, b, _sep) when b == "" do
+    a
+  end
+
+  def join(a, b, sep) do
+    a <> sep <> b
+  end
+end
+
+IO.puts(Concat.join("Hello", ""))           #=> Hello
+IO.puts(Concat.join("Hello", "world"))      #=> Hello world
+IO.puts(Concat.join("Hello", "world", "_")) #=> Hello_world
+```
+Khi 1 biến không được sử dụng bới 1 hàm hoặc mệnh đề, chúng ta cần thêm dấu gạch dưới `_` vào tên của nó để báo hiệu ý định này.  
+
+
+
+
 
 
