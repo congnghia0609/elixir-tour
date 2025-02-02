@@ -1208,13 +1208,71 @@ iex(1)> Enum.reduce([1, 2, 3], 0, fn x, acc -> x + acc end)
 iex(2)> Enum.map([1, 2, 3], fn x -> x * 2 end)
 [2, 4, 6]
 ```
-Hoặc sử dụng cú pháp chụp capture systax:
+Hoặc sử dụng cú pháp chụp capture systax:  
 ```bash
 iex(1)> Enum.reduce([1, 2, 3], 0, &+/2)
 6
 iex(2)> Enum.map([1, 2, 3], &(&1 * 2))
 [2, 4, 6]
 ```
+
+## Enumerables and Streams
+Elixir cho phép chúng ta viết mã đệ quy, nhưng hầu hết các thao tác với collections đều được thực hiện với sự trợ giúp của các module `Enum` và `Stream`.  
+
+### Enumerables
+Ngoài 2 Enum với list và map, module `Enum` còn cung cấp nhiều hàm để truyển đổi transform, sắp xếp sort, gom nhóm group, lọc filter và rút trích các mục items. 
+Elixir cũng cung cấp các phạm vi range.  
+```bash
+iex(1)> Enum.map(1..3, fn x -> x * 2 end)
+[2, 4, 6]
+iex(2)> Enum.reduce(1..3, 0, &+/2)
+6
+```
+
+Chúng ta có thẻ nói các hàm trong module `Enum` là đa hình (polymorphic) vì chúng có thể hoạt động với nhiều kiểu dữ liệu nào có triển khai giao thức `Enumerable`.  
+
+### Eager vs Lazy (Háo hức và lười biếng)
+Tất cả các hàm trong module `Enum` đều là Eager.  
+```bash
+iex(3)> odd? = fn x -> rem(x, 2) != 0 end
+#Function<42.18682967/1 in :erl_eval.expr/6>
+iex(4)> Enum.filter(1..3, odd?)
+[1, 3]
+```
+Khi thực hiện nhiều thao tác với `Enum`, mỗi thao tác sẽ tạo ra 1 danhs ách trung gian cho đến khi chúng ta đạt được kết quả:  
+```bash
+iex(5)> 1..100 |> Enum.map(&(&1 *3)) |> Enum.filter(odd?) |> Enum.sum()
+7500
+
+# Tương đương với mã sau nếu không dùng pipe operator.
+iex(5)> Enum.sum(Enum.filter(Enum.map(1..100, &(&1 * 3)), odd?))
+7500
+```
+
+### The pipe operator (Toán tử đường ống)
+Ký hiệu `|>` được sử dụng trong đoạn code trên là toán tử đường ống pipe operator: nó lấu đầu ra từ biểu thức ở trước bên trái và truyền nó làm đối số đầu tiên cho lệnh gọi hàm ở phía bên phải. Giúp viết code trở nên rõ ràng dễ hiểu với việc chuyển đổi dữ liệu qua một loạt các hàm.  
+
+### Streams (luồng)
+Một thay thế cho `Enum`, Elixir cung cấp module `Stream` hỗ trợ các hoạt động lười biếng lazy operator:  
+```bash
+iex(6)> 1..100 |> Stream.map(&(&1 * 3)) |> Stream.filter(odd?) |> Enum.sum()
+7500
+```
+Thay vì tạo danh sách trung gian, các Stream xây dựng 1 loạt các phép tính chỉ được gọi khi chúng ta truyền Stream cơ bản cho module `Enum`. Stream hữu ích khi làm việc với các bộ sưu tập lớn (collection), có thể là vô hạn.  
+Hàm `Stream.cycle/1` có thể được sử dụng để tạo 1 luống tuần hoàn với 1 enumerable vô hạn, tránh không gọi hàm `Enum.map/2` trên các luồng như vậy vì chúng sẽ tuần hoàn mãi mãi:  
+```bash
+iex(9)> stream = Stream.cycle([1, 2, 3])
+#Function<64.82544474/2 in Stream.unfold/2>
+iex(10)> Enum.take(stream, 10)
+[1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
+```
+
+Một hàm thú vị khác là `Stream.resource/3` có thể được sử dụng để bao quanh các tài nguyên, đảm bảo chúng được mở ngay trước khi liệt kê (enumeration) và đóng close sau đó. Ví dụ, `File.stream!/1` được xây dựng trên dựa trên `Stream.resource/3` để truyền phát các tệp tin:  
+```bash
+iex> "path/to/file" |> File.stream!() |> Enum.take(10)
+```
+Ví dụ trên sẽ lấy 10 dòng đầu tiên của tập tin đã chọn. Điều này có nghĩa là các luồng stream có thể rất hữu ích để xử lý các tập tin lớn hoặc thậm trí các tài nguyên chậm như tài nguyên mạng (network resource).  
+
 
 
 
