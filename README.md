@@ -1274,6 +1274,41 @@ iex> "path/to/file" |> File.stream!() |> Enum.take(10)
 Ví dụ trên sẽ lấy 10 dòng đầu tiên của tập tin đã chọn. Điều này có nghĩa là các luồng stream có thể rất hữu ích để xử lý các tập tin lớn hoặc thậm trí các tài nguyên chậm như tài nguyên mạng (network resource).  
 
 
+## Processes (tiến trình)
+Trong Elixir, tất cả code chạy bên trong các tiến trình process. Các process được cô lập (isolated) với nhau và giao tiếp thông qua việc truyền tin nhắn message. Process không chỉ là cơ sở cho tính đồng thời concurrency trong Elixir mà còn cung cấp phương tiện để xây dựng các chương trình phân tán distributed và khả năng chịu lỗi cao fault-tolerant.  
+Đừng nhầm lẫn giữa Process của Elixir và Process của hệ điều hành. Process trong Elixir cực kỳ nhẹ về bộ nhớ và CPU (thậm chí so sánh với các luồng thread được sử dụng trong nhiều ngôn ngữ lập trình khác). Vì vậy, không có gì lạ khi có hàng chục hoặc thậm chí hàng trăm nghìn tiến trình process chạy cùng lúc.  
+
+### Spawning processes (sinh tiến trình)
+Cách cơ bản để tạo ra tiến trình mới là dùng hàm `spawn/1`, nó lấy 1 hàm để thực thi trong 1 tiến trình khác:  
+```bash
+iex(3)> pid = spawn(fn -> 1 + 2 end)
+#PID<0.107.0>
+iex(4)> Process.alive?(pid)
+false
+```
+Lưu ý `spawn/1` trả về PID (mã định danh tiến trình process identifier). Tiến trình process được tạo ra sẽ thực thi hàm đã cho và kết thúc sau khi hàm chạy xong:  
+
+Chúng ta có thể lấy PID của tiến trình hiện tại bằng `self/0`:  
+```bash
+iex(5)> self()
+#PID<0.105.0>
+iex(6)> Process.alive?(self())
+true
+```
+
+Các tiến trình process trở nên thú vị hơn nhiều khi chúng ta có thể gửi và nhận tin nhắn message.  
+
+### Sending and receiving messages (Gửi và nhận tin nhắn)
+Chúng ta có thể gửi tin nhắn message đến 1 tiến trình process với `send/2` và nhận tin nhắn bằng `receive/1`:  
+```bash
+iex(8)> send(self(), {:hello, "world"})
+{:hello, "world"}
+iex(9)> receive do
+...(9)> {:hello, msg} -> msg
+...(9)> {:world, _msg} -> "won't match"
+...(9)> end
+"world"
+```
 
 
 
