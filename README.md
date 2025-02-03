@@ -1575,9 +1575,184 @@ iex(6)> IO.puts([?O, ?l, ?á, ?\s, "Mary", ?!])
 Olá Mary!
 :ok
 ```
-charlist ví dụ như ~c"hello world" là danh sách các số nguyên và do đó là chardata.  
+charlist ví dụ như `~c"hello world"` là danh sách các số nguyên và do đó là chardata.  
 
 Việc lựa chọn giữa iodata và chardata phụ thuộc vào mã hóa encoding của thiết bị IO. Nếu file được mở không có encoding thì file là iodata và nên dùng với các hàm trong module IO bắt đầu bằng `bin*`. Mặc định thiết bị IO `:stdio` và file được mở với `:utf8` chính là chardata và làm việc với các hàm còn lại trong module `IO`.  
+
+
+## alias, require, import, and use
+Để tạo điều kiện thuận lợi cho việc tái sử dụng phần mềm, Elixir cung cấp 3 chỉ thị: `alias`, `require` và `import` cùng với 1 macro có tên là `use` được tóm tắt dưới đây:  
+```bash
+# Alias the module so it can be called as Bar instead of Foo.Bar
+alias Foo.Bar, as: Bar
+
+# Require the module in order to use its macros
+require Foo
+
+# Import functions from Foo so they can be called without the `Foo.` prefix
+import Foo
+
+# Invokes the custom code defined in Foo as an extension point
+use Foo
+```
+3 cái đầu tiên được gọi là chỉ thị vì chúng có phạm vi từ vựng lexical scope, trong khi `use` là điểm mở rộng chung cho phép module được sử dụng đưa mã vào.  
+
+### alias (bí danh)
+`alias` cho phép bạn thiết lập bí danh cho bất kỳ tên module nào.  
+Việc gọi `alias` mà không có tùy chọn `:as` sẽ tự động đặt bí danh thành phần cuối của tên Module, ví dụ: `alias Math.List` giống như: `alias Math.List, as: List`.  
+Lưu ý rằng `alias` có phạm vi từ điển lexically scoped, cho phép bạn đặt alias bên trong các hàm cụ thể:  
+```bash
+defmodule Math do
+  def plus(a, b) do
+    alias Math.List
+    # ...
+  end
+
+  def minus(a, b) do
+    # ...
+  end
+end
+```
+Việc gọi `alias` bên trong `plus/2` chỉ có tác dụng bên trong hàm này, và không có ảnh hưởng gì với hàm `minus/2`.  
+
+### require (yêu cầu)
+Elixir cung cấp macro như 1 cơ chế cho meta-programming (viết mã để tạo ra mã). Macro được mở rộng tại thời điểm biên dịch.  
+Các hàm công khai public functions trong module có sẵn trên toàn cục, nhưng để sử dụng macro, bạn cần phải chọn tham gia bằng cách yêu cầu module mà chúng được định nghĩa.  
+```bash
+iex(1)> Integer.is_odd(3)
+** (UndefinedFunctionError) function Integer.is_odd/1 is undefined or private. However, there is a macro with the same name and arity. Be sure to require Integer if you intend to invoke this macro
+    (elixir 1.18.2) Integer.is_odd(3)
+    iex:1: (file)
+iex(1)> require Integer 
+Integer
+iex(2)> Integer.is_odd(3)
+true
+```
+Trong Elixir, `Integer.is_odd/1` được định nghĩa là 1 macro để có thể sử dụng như 1 guard. Điều này có nghĩa là, để gọi `Integer.is_odd/1`, trước tiên chúng ta cần yêu cầu module `Integer`.  
+Lưu ý rằng giống như chỉ thị `alias`, `require` cũng có phạm vi từ vựng lexically scoped.  
+
+
+### import
+Chúng ta sử dụng `import` bất cứ khi nào muốn truy cập hàm hoặc macro từ các module khác mà không cần sử dụng tên đầy đủ. Lưu ý rằng chúng ta chỉ có thể import các hàm public, vì các hàm private không bao giờ có thể truy cập được từ bên ngoài.  
+```bash
+iex(3)> import List, only: [duplicate: 2]
+List
+iex(4)> duplicate(:ok, 3)
+[:ok, :ok, :ok]
+```
+Tùy chọn `:only` được khuyến nghị để tránh import tất cả các hàm của module, ngược lại, `:except` cho phép import tất cả các hàm trong module ngoại trừ danh sách hàm.  
+
+Lưu ý rằng `import` cũng có phạm vi từ vựng lexically scoped, tức là cũng có thể import các macro và hàm cụ thể bên trong các định nghĩa hàm:
+```bash
+defmodule Math do
+  def some_function do
+    import List, only: [duplicate: 2]
+    duplicate(:ok, 10)
+  end
+end
+```
+
+Mặc dù `import` có thể hữu ích cho các framework và library để xây dựng các lớp trừu tượng, nhưng các nhà phát triển thường thích sử dụng `alias` hơn `import`, vì alias giúp làm rõ hơn nguồn gốc của hàm được gọi.  
+
+
+### use
+Macro `use` thường được sử dụng như 1 điểm mở rộng. Điều này có nghĩa là khi bạn sử dụng `use` 1 module `FooBar`, bạn cho phép module đó đưa bất kỳ mã nào vào module hiện tại, chẳng hạn như nhập chính nó hoặc các module khác, xác định các hàm mới, thiết lập trạng thái module, v.v.  
+Ví dụ để viết các bài kiểm tra sử dụng ExUnit framework, chúng ta sử dụng module `ExUnit.Case`:  
+```bash
+defmodule AssertionTest do
+  use ExUnit.Case, async: true
+
+  test "always pass" do
+    assert true
+  end
+end
+```
+Đằng sau hậu trường, `use` yêu cầu module đã cho và sau đó gọi hàm gọi lại `__using__/1` callback trên module đó, cho phép module đưa 1 số mã vào ngữ cảnh hiện tại. 1 số module như `ExUnit.case` cũng như `Supervisor` và `GenServer` sử dụng cơ chế này để đưa vào module của bạn 1 số hành vi cơ bản mà module của bạn có mục đích ghi đè override hoặc hoàn thiện complete.  
+Nói chung, module sau đây:  
+```bash
+defmodule Example do
+  use Feature, option: :value
+end
+```
+được biên dịch thành  
+```bash
+defmodule Example do
+  require Feature
+  Feature.__using__(option: :value)
+end
+```
+Vì `use` cho phép chạy bất kỳ mã nào nên chúng ta không thể thực sự biết được tác dụng phụ của việc sử dụng 1 module nếu không đọc tài liệu của nó. Do đó, hãy sử dụng chức năng này 1 cách cẩn thận và chỉ khi thật sự cần thiết. Không sử dụng `use` khi `import` hoặc `alias` có thể thực hiện được.  
+
+
+### Understanding Aliases (hiểu về bí danh)
+Bạn có thể thắc mắc Elixir alias thực chất là gì và nó được biểu diễn như thế nào?  
+1 alias trong Elixir là 1 mã định danh viết hoa như `String`, `Keyword`, v.v. được chuyển đổi thành 1 atom trong quá trình biên dịch. Ví dụ, mặc định, `String` alias được dịch thành atom "Elixir.String":  
+```bash
+iex(5)> is_atom(String)
+true
+iex(6)> to_string(String)
+"Elixir.String"
+iex(7)> :"Elixir.String" == String
+true
+```
+Bằng cách sử dụng chỉ thị `alias/2`, chúng ta đang thay đổi atom mà alias mở rộng thành.  
+
+Các alias mở rộng atome vì trong Erlang VM (và do đó là Elixir), các module luôn được biểu diễn bằng các atoms:  
+```bash
+iex(10)> List.flatten([1, [2], 3])
+[1, 2, 3]
+iex(11)> :"Elixir.List".flatten([1, [2], 3])
+[1, 2, 3]
+```
+Đó là cơ chế chúng ta sử dụng để gọi các module Erlang:  
+```bash
+iex(12)> :lists.flatten([1, [2], 3])
+[1, 2, 3]
+```
+
+### Module nesting (Lồng ghép module)
+Xem ví dụ sau:  
+```bash
+defmodule Foo do
+  defmodule Bar do
+  end
+end
+```
+Ví dụ trên định nghĩa 2 module: Foo và Foo.Bar. Module thứ 2 có thể được truy cập như `Bar` bên trong `Foo` miễn là chúng nằm trong cùng 1 phạm vi từ vựng lexical scope.  
+
+Nếu sau đó, module `Bar` được di chuyển ra khỏi định nghĩa module `Foo` thì module này phải được tham chiếu bằng tên đầy đủ `Foo.Bar` hoặc phải sử dụng chỉ thị `alias` như đã thảo luận ở trên.  
+
+Trong Elixir, bạn không cần phải định nghĩa module `Foo` trước khi định nghĩa module `Foo.Bar`, chúng thực sự độc lập. Ví dụ trên cũng có thể được viết như sau:  
+```bash
+defmodule Foo.Bar do
+end
+
+defmodule Foo do
+  alias Foo.Bar
+  # Can still access it as `Bar`
+end
+```
+
+Việc đặt bí danh alias cho 1 module lồng nhau không đưa các module cha vào phạm vi. Ví dụ:  
+```bash
+defmodule Foo do
+  defmodule Bar do
+    defmodule Baz do
+    end
+  end
+end
+
+alias Foo.Bar.Baz
+# The module `Foo.Bar.Baz` is now available as `Baz`
+# However, the module `Foo.Bar` is *not* available as `Bar`
+```
+
+
+### Multi alias/import/require/use
+Có thể `alias`, `import`, `require`, hoặc `use` nhiều module cùng 1 lúc. Điều này đặc biệt hữu ích khi chúng ta bắt đầu lồng các module, điều này rất phổ biến khi xây dựng các ứng dụng Elixir. Ví dụ, tưởng tượng bạn có 1 ứng dụng trong đó tất cả các module được lồng vào `MyApp` bạn có thể đặt bí danh cho các module `MyApp.Foo`, `MyApp.Bar` và `MyApp.Baz` cùng 1 lúc như sau:  
+```bash
+alias MyApp.{Foo, Bar, Baz}
+```
 
 
 
