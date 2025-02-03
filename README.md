@@ -1443,6 +1443,142 @@ iex(12)> Agent.get(pid, fn map -> Map.get(map, :hello) end)
 Một tùy chọn `:name` có thể được cung cấp cho `Agent.start_link/2` và nó sẽ được tự động đăng ký. bên cạnh Agent, Elixir cung cấp API để xây dựng các máy chủ tổng quan gọi là `GenServer`, sổ đăng ký registries, và nhiều thứ khác, tất cả đều được hỗ trợ bởi các process bên dưới, sẽ được trình bày chi tiết trong hướng dẫn "Mix và OTP".  
 
 
+## IO and the file system
+Hệ thống IO cung cấp cơ hội tuyệt vời để làm sáng tỏ 1 số triết lý và điều thú vị về Elixir và Erlang VM.  
+
+### The IO module
+Module IO là cơ chế chính trong Elixir để đọc và ghi vào nhập/xuất chuẩn `:stdio`, lỗi chuẩn `:stderr`, tập tin file và các thiết bị IO khác. Việc sử dụng module này khá đơn giản:  
+```bash
+iex(1)> IO.puts("hello world")
+hello world
+:ok
+iex(2)> IO.gets("yes or no? ")
+yes or no? yes 
+"yes\n"
+```
+Mặc định, các hàm trong module IO đọc từ đầu vào chuẩn và ghi vào đầu ra chuẩn. Chúng ta có thể thay đổi điều đó bằng cách truyền `:stderr` làm đối số, để ghi vào vào thiết bị lỗi chuẩn:  
+```bash
+iex(3)> IO.puts(:stderr, "hello world")
+hello world
+:ok
+```
+
+### The File module
+Module `File` chứa các hàm cho phép chúng ta mở tệp dưới dạng thiết bị IO. Mặc định, tệp được mở ở chế độ nhị phân, bằng các hàm `IO.binread/2` và `IO.binwrite/2` từ module `IO`:  
+```bash
+iex> {:ok, file} = File.open("path/to/file/hello", [:write])
+{:ok, #PID<0.47.0>}
+iex> IO.binwrite(file, "world")
+:ok
+iex> File.close(file)
+:ok
+iex> File.read("path/to/file/hello")
+{:ok, "world"}
+```
+Có thể mở file bằng tùy chọn `:append` thay vì `:write` để giữ nguyên nội dung của file. Bạn cũng có thể truyền tùy chọn `:utf8` để yêu cầu module `File` diễn giải các byte được đọc từ file thành các byte được mã hóa UTF-8.  
+
+Bạn cũng sẽ nhận thấy rằng các hàm trong module `File` có 2 biến thể: 1 biến thể thông thường và 1 biến thể khác có dấu chấm than ở cuối `!`. Ví dụ, khi chúng ta đọc file "hello", chúng ta có thể sử dụng `File.read!/1` thay cho `File.read/1`:  
+```bash
+iex> File.read("path/to/file/hello")
+{:ok, "world"}
+iex> File.read!("path/to/file/hello")
+"world"
+iex> File.read("path/to/file/unknown")
+{:error, :enoent}
+iex> File.read!("path/to/file/unknown")
+** (File.Error) could not read file "path/to/file/unknown": no such file or directory
+```
+Lưu ý phiên bản có `!` trả về nội dung của file thay vì 1 tuple, và nếu có bất kỳ lỗi nào xảy ra, hàm sẽ báo lỗi.  
+
+Phiên bản không có `!` được ưu tiên khi bạn muốn xử lý các kết quả khác nhau bằng cách sử dụng khớp mẫu pattern matching:  
+```bash
+case File.read("path/to/file/hello") do
+  {:ok, body} -> # do something with the `body`
+  {:error, reason} -> # handle the error caused by `reason`
+end
+```
+Tránh viết:  
+```bash
+{:ok, body} = File.read("path/to/file/unknown")
+```
+vì trong trường hợp xảy ra lỗi, `File.read/1` sẽ trả về {:error, reason} và việc so khớp mẫu sẽ không thành công.  
+Do đó, nếu bạn không muốn xử lý lỗi, hãy sử dụng các hàm kết thúc bằng dấu chấm than `!`.  
+
+### The Path module
+Phần lớn các hàm trong module `File` mong đợi các đường dẫn làm đối số. Module `Path` cung cấp các tiện ích để làm việc với các đường dẫn này.  
+```bash
+iex(4)> Path.join("foo", "bar")
+"foo/bar"
+iex(5)> Path.expand("~/hello")
+"/home/user/hello"
+```
+Nên xử dụng các hàm từ module `Path` thay vì thao tác trực tiếp chuỗi vì module `Path` xử lý tốt đường dẫn cho các hệ điều hành khác nhau. Cuối cùng, Elixir sẽ tự động đổi dấu gạch chép slash `/` thành dấu gạch chéo ngược backslash `\` trên Windows khi thực hiện các thao tác với file.  
+
+
+### Processes (tiến trình)
+Bạn có thể thấy rằng `File.open/2` trả về 1 bộ tuple như {:ok, pid}:  
+```bash
+iex> {:ok, file} = File.open("hello")
+{:ok, #PID<0.47.0>}
+```
+Điều này xảy ra vì module `IO` thực sự hoạt động với các tiến trình process. Vì là 1 process, khi bạn ghi vào 1 file đã bị đóng, thực tế là bạn đang gửi 1 message đến 1 process đã bị chấm dứt:  
+```bash
+iex> File.close(file)
+:ok
+iex> IO.write(file, "is anybody out there")
+** (ErlangError) Erlang error: :terminated:
+
+  * 1st argument: the device has terminated
+
+    (stdlib 5.0) io.erl:94: :io.put_chars(#PID<0.114.0>, "is anybody out there")
+    iex:4: (file)
+```
+
+Hãy xem chi tiết hơn những gì xảy ra khi bạn yêu cầu `IO.write(pid, binary)`. Module `IO` gửi 1 message đến process được xác định bởi `pid` với thao tác mong muốn. 1 process ad-hoc nhỏ có thể giúp chúng ta thấy điều đó:  
+```bash
+iex> pid = spawn(fn ->
+...>   receive do
+...>     msg -> IO.inspect(msg)
+...>   end
+...> end)
+#PID<0.57.0>
+iex> IO.write(pid, "hello")
+{:io_request, #PID<0.41.0>, #Reference<0.0.8.91>,
+ {:put_chars, :unicode, "hello"}}
+** (ErlangError) erlang error: :terminated
+```
+Bằng cách mô hình hóa các thiết bị IO với process, Erlang VM cho phép chúng ta thậm chí đọc và ghi vào các file trên các nút node.  
+
+
+### iodata and chardata
+Trong tất cả các ví dụ trên, chúng ta sử dụng nhị phân khi ghi vào file. Tuy nhiên, hầu hết các hàm IO trong Elixir cũng chấp nhận "iodata" hoặc "chardata".  
+1 trong những lý do chính để sử dụng "iodata" và "chardata" là vì hiệu suất. Ví dụ, hãy tưởng tượng bạn cần chào ai đó trong ứng dụng của mình:  
+```bash
+name = "Mary"
+IO.puts("Hello " <> name <> "!")
+```
+Các chuỗi trong Elixir là bất biến immutable, giống như hầu hết các cấu trúc dữ liệu khác, ví dụ trên sẽ sao chép chuỗi "Mary" vào chuỗi "Hello Mary!" mới. Mặc dù điều này không quan trọng đối với chuỗi ngắn, nhưng việc sao chép có thể khá tốn kém đối với chuỗi lớn! Vì lý do này, các hàm IO trong Elixir cho phép bạn truyền 1 danh sách chuỗi thay thế:  
+```bash
+name = "Mary"
+IO.puts(["Hello ", name, "!"])
+```
+Trong ví dụ trên, không có sao chép. Thay vào đó, chúng ta tạo ra 1 danh sách chứa tên gốc. Chúng ta gọi những danh sách như vậy là "iodata" hoặc "chardata" và chúng ta sẽ sớm biết được sự khác biệt chính xác giữa chúng.  
+
+"iodata" và "chardata" không chỉ chứa các chuỗi mà còn có thể chứa các danh sách chuỗi lồng nhau tùy ý nữa:  
+```bash
+IO.puts(["apple", [",", "banana", [",", "lemon"]]])
+```
+
+Sự khác biệt giữa "iodata" và "chardata" là việc biểu diễn số nguyên integer. Với "iodata" số nguyên biểu diễn byte, với "chardata" số nguyên biểu diễn điểm mã Unicode codepoints. Đối với các ký tự ASCII, biểu diễn byte giống với biểu diễn điểm mã codepoint, do đó nó phù hợp với cả 2 phân loại. Tuy nhiên, thiết bị IO mặc định hoạt động với chardata, nghĩa là chúng ta có thể thực hiện:  
+```bash
+iex(6)> IO.puts([?O, ?l, ?á, ?\s, "Mary", ?!])
+Olá Mary!
+:ok
+```
+charlist ví dụ như ~c"hello world" là danh sách các số nguyên và do đó là chardata.  
+
+Việc lựa chọn giữa iodata và chardata phụ thuộc vào mã hóa encoding của thiết bị IO. Nếu file được mở không có encoding thì file là iodata và nên dùng với các hàm trong module IO bắt đầu bằng `bin*`. Mặc định thiết bị IO `:stdio` và file được mở với `:utf8` chính là chardata và làm việc với các hàm còn lại trong module `IO`.  
+
 
 
 
