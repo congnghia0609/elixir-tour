@@ -1310,5 +1310,139 @@ iex(9)> receive do
 "world"
 ```
 
+Khi 1 tin nhắn message được gửi đến 1 tiến trình process, message đó sẽ được lưu trữ trong hộp thư của tiến trình process đó. Khối `receive/1` sẽ đi qua hộp thư process hiện tại để tìm kiếm 1 message khớp với bất kỳ mẫu nào được đưa ra. `receive/1` hỗ trợ các guards và nhiều mệnh đề, giống như `case/2`.  
+Process gửi message không bị chặn trên `send/2`, nó đưa message vào hộp thư của người nhận và tiếp tục. Đặc biệt, tiến trình process có thể gửi message cho chính nó.  
+nếu không có message nò trong hộp thư khớp với bất kỳ mẫu nào, process hiện tại sẽ đợi cho đến khi cho đến khi có message khớp, thời gian chờ cũng có thể được chỉ định:  
+```bash
+iex(1)> receive do 
+...(1)> {:hello, msg} -> msg 
+...(1)> after 
+...(1)> 1_000 -> "nothing after 1s"
+...(1)> end 
+"nothing after 1s"
+```
+Bạn có thể thiết lập thời gian chờ (timeout) là 0 khi bạn mong đợi message sẽ nằm trong hộp thư.  
+```bash
+iex(2)> parent = self()
+#PID<0.105.0>
+iex(3)> spawn(fn -> send(parent, {:hello, self()}) end)
+#PID<0.106.0>
+iex(4)> receive do 
+...(4)> {:hello, pid} -> "Got hello from #{inspect pid}"
+...(4)> end
+"Got hello from #PID<0.106.0>"
+```
+Hàm `inspect/1` được sử dụng để chuyển đồi biểu diễn bên trong của cấu trúc dữ liệu thành chuỗi, thường để in.  
+Khi ở chế độ shell, bạn có thể dùng `flush/0` để xả và in ra tất cả message trong hộp thư.  
+```bash
+iex(5)> send(self(), :hello)
+:hello
+iex(6)> flush()
+:hello
+:ok
+```
+
+### Links (liên kết)
+Vì mặc định các process là cô lập cho nên process này chết không ảnh hưởng đến process khác và process cha. Nếu chúng ta muốn lỗi trong 1 process lan truyền đến 1 process khác, chúng ta nên liên kết chúng. Điều này có thể được thực hiện với `spawn_link/1`:  
+```bash
+iex(7)> self()
+#PID<0.105.0>
+iex(8)> spawn_link(fn -> raise "oops" end)
+
+18:09:17.244 [error] Process #PID<0.107.0> raised an exception
+** (RuntimeError) oops
+** (EXIT from #PID<0.105.0>) shell process exited with reason: {%RuntimeError{message: "oops"}, []}
+
+Interactive Elixir (1.18.2) - press Ctrl+C to exit (type h() ENTER for help)
+```
+Vì các process này được liên kết, nên bây giờ chúng ta thấy 1 thông báo cho process cha, tức là tiến trình shell, đã nhận được tín hiệu Exit từ 1 process khác khiến shekk kết thúc. IEX phát hiện tính huống này và bắt đầu 1 phiên shell mới.  
+
+Việc liên kết cũng có thể được thực hiện thủ công bằng cách gọi `Process.link/1`.  
+Process và Link đóng vai trò quan trọng trong xây dựng các hệ thống chịu lỗi (fault-tolerant systems), các tiến trình Process trong Elixir được cô lập và không chia sẻ bất cứ thứ gì theo mặc định. Do đó, lỗi trong 1 process sẽ không bao giờ làm sập hoặc làm hỏng trạng thái của Process khác. Tuy nhiên, liên kết cho phép các Process thiết lập mối quan hệ trong trường hợp lỗi. Chúng ta thường liên kết các process của mình với các trình giám sát supervisors, là người sẽ phát hiện 1 process bị chết và bắt đầu 1 process mới thay thế.  
+
+Trong khi các ngôn ngữ khác yêu cầu chúng ta phải phát hiện/xử lý (catch/handle) các ngoại lệ exceptions, thì trong Elixir, chúng ta thực sự có thể để các process lỗi vì chúng ta mong đợi người giám sát supervisors khởi động lại hệ thống đúng cách. "Thất bại nhanh chóng - Failing fast" (đôi khi được gọi là để nó sụp đổ) là 1 triết lý phổ biến khi viết phần mềm Elixir!  
+
+`spawn/1` và `spawn_link/1` là các hàm cơ bản để tạo tiến trình trong Elixir. Trong thực tế chung ta hay dùng các trừu tượng được xây dựng trên chúng, phổ biến nhất được gọi là tác vụ task.  
+
+### Tasks (tác vụ)
+task được xây dựng dựa trên các hàm spawn để cung cấp các báo cáo lỗi và nội quan (introspection) tốt hơn:  
+```bash
+iex(9)> Task.start(fn -> raise "oops" end)
+{:ok, #PID<0.109.0>}
+
+18:38:13.963 [error] Task #PID<0.109.0> started from #PID<0.108.0> terminating
+** (RuntimeError) oops
+    (elixir 1.18.2) src/elixir.erl:386: :elixir.eval_external_handler/3
+Function: #Function<43.18682967/0 in :erl_eval.expr/6>
+    Args: []
+```
+Thay vì `spawn/1` và `spawn_link/1` chúng ta sử dụng `Task.start/1` và `Task.start_link/1` trả về {:ok, pid} thay vì chỉ PID. Đây là những gì cho phép các Task được sử dụng trong cây giám sát supervision tree. Hơn nữ, Task cung cấp các hàm tiện lợi, như `Task.async/1` và `Task.await/1`, và chức năng để phân phối dễ dàng.  
+Chúng ta sẽ khám phá các nhiệm vụ và các khái niệm trừu tượng xung quanh process trong hướng dẫn về "Mix và OTP".  
+
+### State (trạng thái)
+Nếu bạn xây dựng 1 ứng dụng yêu cầu trạng thái state để duy trì cấu hình ứng dụng thì bạn sẽ lưu trữ nó ở đâu? Process là câu trả lời phổ biến nhất cho câu hỏi này. Chúng ta có thể viết các process lặp vô hạn, duy trì trạng thái và gửi nhận message. Ví dụ, viết 1 module khởi động một process mới hoạt động như 1 kho lưu trữ key-value trong file có tên `kv.exs`:  
+```bash
+defmodule KV do
+  def start_link do
+    Task.start_link(fn -> loop(%{}) end)
+  end
+
+  defp loop(map) do
+    receive do
+      {:get, key, caller} ->
+        send(caller, Map.get(map, key))
+        loop(map)
+      {:put, key, value} ->
+        loop(Map.put(map, key, value))
+    end
+  end
+end
+```
+
+Hãy thử chạy bằng: `iex kv.exs`:  
+```bash
+iex(1)> {:ok, pid} = KV.start_link()
+{:ok, #PID<0.111.0>}
+iex(2)> send(pid, {:get, :hello, self()})
+{:get, :hello, #PID<0.110.0>}
+iex(3)> flush()
+nil
+:ok
+```
+Đầu tiên, process map không có key, do đó gửi message `:get` rồi xóa hộp thư đến của process hiện tại sẽ trả về `nil`. Bây giờ gửi message `:put` và thử lại:  
+```bash
+iex(4)> send(pid, {:put, :hello, :world})
+{:put, :hello, :world}
+iex(5)> send(pid, {:get, :hello, self()})
+{:get, :hello, #PID<0.110.0>}
+iex(6)> flush()
+:world
+:ok
+```
+Chú ý cách process duy trì trạng thái và chúng ta có thể lấy và cập nhật trạng thái này bằng cách gửi message. Bất kỳ process nào biết pid ở trên đều có thể gửi message và thao tác trạng thái.  
+Bạn có thể đăng ký `pid`, đặt tên cho nó và cho phép những ai biết tên đó đều gửi message đến nó:  
+```bash
+iex(7)> Process.register(pid, :kv)
+true
+iex(8)> send(:kv, {:get, :hello, self()})
+{:get, :hello, #PID<0.110.0>}
+iex(9)> flush()
+:world
+:ok
+```
+
+Trong thực tế, Elixir cung cấp `Agent` là những trừu tượng đơn giản để quản lý trạng thái, mã trên có thể được viết lại như sau:  
+```bash
+iex(10)> {:ok, pid} = Agent.start_link(fn -> %{} end)
+{:ok, #PID<0.112.0>}
+iex(11)> Agent.update(pid, fn map -> Map.put(map, :hello, :world) end)
+:ok
+iex(12)> Agent.get(pid, fn map -> Map.get(map, :hello) end)
+:world
+```
+Một tùy chọn `:name` có thể được cung cấp cho `Agent.start_link/2` và nó sẽ được tự động đăng ký. bên cạnh Agent, Elixir cung cấp API để xây dựng các máy chủ tổng quan gọi là `GenServer`, sổ đăng ký registries, và nhiều thứ khác, tất cả đều được hỗ trợ bởi các process bên dưới, sẽ được trình bày chi tiết trong hướng dẫn "Mix và OTP".  
+
+
+
 
 
