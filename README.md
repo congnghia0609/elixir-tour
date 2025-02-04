@@ -1755,5 +1755,112 @@ alias MyApp.{Foo, Bar, Baz}
 ```
 
 
+## Module attributes (Thuộc tính module)
+Thuộc tính module trong Elixir phục vụ 3 mục đích:  
+- Làm chú thích annotations cho module và function.
+- Làm bộ nhớ module tạm thời được sử dụng trong quá trình biên dịch.
+- Làm hằng số thời gian biên dịch.
+
+### As annotations (chú thích)
+Elixir mang khái niệm thuộc tính module từ Erlang. Ví dụ:  
+```bash
+defmodule MyServer do
+  @moduledoc "My server code."
+end
+```
+Elixir có 1 số thuộc tính được giữ lại, như:  
+- `@moduledoc` cung cấp tài liệu cho module hiện tại.
+- `@doc` cung cấp tài liệu cho hàm hoặc macro theo sau thuộc tính.
+- `@spec` cung cấp 1 typespec cho hàm theo sau thuộc tính.
+- `@behaviour` được sử dụng để chỉ định OTP hoặc hành vi do người dùng xác định.
+
+Ví dụ module `Math` được thêm chú thích vào file `math.ex`:  
+```bash
+defmodule Math do
+  @moduledoc """
+  Provides math-related functions.
+
+  ## Examples
+
+      iex> Math.sum(1, 2)
+      3
+
+  """
+
+  @doc """
+  Calculates the sum of two numbers.
+  """
+  def sum(a, b), do: a + b
+end
+```
+Elixir khuyến khích sử dụng Markdown để viết tài liệu dễ đọc. Nội dung nhiều dòng bắt đầu và kết thúc bằng 3 dấu nháy kép. Chúng ta có thể truy cập tài liệu của bất kỳ module đã biên dịch nào trực tiếp từ IEx:  
+```bash
+elixirc math.ex
+iex
+iex> h Math # Access the docs for the module Math
+...
+iex> h Math.sum # Access the docs for the sum function
+...
+```
+Elixir có 1 công cụ là ExDoc dùng để tạo các trang HTML từ tài liệu.  
+
+### As temporary storage (lưu trữ tạm thời)
+Chúng ta đã thấy cách định nghĩa thuộc tính, nhưng làm thế nào chúng ta có thể đọc chúng? Xem ví dụ:  
+```bash
+defmodule MyServer do
+  @service URI.parse("https://example.com")
+  IO.inspect(@service)
+end
+```
+Nếu cố gắng truy cập vào 1 thuộc tính chưa được xác định sẽ in ra cảnh báo:  
+```bash
+defmodule MyServer do
+  @unknown
+end
+warning: undefined module attribute @unknown, please remove access to @unknown or explicitly set it before access
+```
+Thuộc tính chũng có thể được đọc bên trong các hàm:  
+```bash
+defmodule MyApp.Status do
+  @service URI.parse("https://example.com")
+  def status(email) do
+    SomeHttpClient.get(@service)
+  end
+end
+```
+Thuộc tính module được định nghĩa tại thời điểm biên dịch và giá trị trả về của nó, không phải lệnh gọi hàm, là thứ sẽ được thay thế cho thuộc tính. Vì vậy, đoạn mã trẹn sẽ biên dịch thành đoạn mã sau:  
+```bash
+defmodule MyApp.Status do
+  def status(email) do
+    SomeHttpClient.get(%URI{
+      authority: "example.com",
+      host: "example.com",
+      port: 443,
+      scheme: "https"
+    })
+  end
+end
+```
+Điều này có thể hữu ích cho việc tính toán trước các giá trị và sau đó đưa kết quả vào module. Đây chính là ý nghĩa của lưu trữ tạm thồi: sau khi module được biên dịch, thuộc tính module sẽ bị loại bỏ, ngoại trừ các hàm đã đọc thuộc tính attribute. Nếu bạn đọc cùng 1 thuộc tính nhiều lần bên trong nhiều hàm, bạn sẽ làm tăng thời gian biên dịch vì Elixir phải biên dịch mọi ảnh chụp nhanh giá trị của thuộc tính.  
+
+
+### As compile-time constants
+Thuộc tính module cũng có thể hữu ích như hằng số thời gian biên dịch. Nhưng bản thân các hàm đủ để đóng vai trò là hằng số trong cơ sở mã, Ví dụ thay vì định nghĩa `@hours_in_a_day 24` bạn nên ưu tiên `defp hours_in_a_day(), do: 24`, thậm chí có thể định nghĩa 1 hàm public nếu nó cần chia sẻ giữa các module.  
+
+Các thuộc tính module rất hữu dụng trong module `ExUnit` với nhiều mục đích khác nhau:  
+```bash
+defmodule MyTest do
+  use ExUnit.Case, async: true
+
+  @tag :external
+  @tag os: :unix
+  test "contacts external service" do
+    # ...
+  end
+end
+```
+
+
+
 
 
