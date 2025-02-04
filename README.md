@@ -1960,6 +1960,192 @@ iex(14)> %Car{}
 enforce_keys cung cấp 1 đảm bảo lúc biên dịch đơn giản để hỗ trợ các nhà phát triển khi xây dựng các struct. Nó không được thực thi trên các bản cập nhật và không cung cấp bất kỳ loại xác thực giá trị nào.  
 
 
+## Protocols (giao thức)
+Giao thức protocol là cơ chế để đạt được tính đa hình polymorphism trong Elixir, nơi bạn muốn hành vị thay đổi tùy theo kiểu dữ liệu. Chúng ta đã quen thuộc với các giải quyết vấn đề: thông qua việc khớp mẫu và các mệnh đề guard. Xem xét 1 module tiện ích đơn giản giúp chúng ta biết kiểu của biến đầu vào:  
+```bash
+defmodule Utility do
+  def type(value) when is_binary(value), do: "string"
+  def type(value) when is_integer(value), do: "integer"
+  # ... other implementations ...
+end
+```
+Code này có thể gây ra vấn đề nếu nó được chia sẻ dưới dạng phụ thuộc dependency bởi nhiều ứng dụng vì sẽ không có cách dễ dàng nào để mở rộng chức năng của nó.  
+Đây chính là lúc giao thức protocol có thể giúp chúng ta: giao thức protocol cho phép chúng ta mở rộng hành vi ban đầu cho nhiều kiểu dữ liệu tùy theo nhu cầu. Bởi vì việc phân phối 1 giao thức protocol có thể áp dụng cho bất kỳ kiểu dữ liệu nào đã triển khai giao thức và bất kỳ ai cũng có thể triển khai giao thức đó vào bất kỳ lúc nào.  
+Sau đây là cách chúng ta có thể viết cùng 1 chức năng `Utility.type/1` dưới dạng 1 giao thức protocol:  
+```bash
+defprotocol Utility do
+  @spec type(t) :: String.t()
+  def type(value)
+end
+
+defimpl Utility, for: BitString do
+  def type(_value), do: "string"
+end
+
+defimpl Utility, for: Integer do
+  def type(_value), do: "integer"
+end
+```
+Chúng ta định nghĩa protocol bằng `defprotocol/2` các hàm và đặc tả có thể trông giống với các interface hoặc abstract lớp trừu tượng trong các ngôn ngữ khác. Chúng ta có thể thêm nhiều triển khai tùy thích bằng cách sử dụng `defimpl/2`. Đầu ra hoàn toàn giống nhau cứ như chúng ta có 1 module duy nhất với nhiều hàm:  
+```bash
+iex> Utility.type("foo")
+"string"
+iex> Utility.type(123)
+"integer"
+```
+
+Một trong những giao thức protocol phổ biến nhất mà bạn có thể gặp là giao thức `String.Chars`: triển khai hàm `to_string/1` cho các cấu trúc tùy ý của bạn sẽ nói cho hat nhân kernel Elixir biết các biểu diễn chúng dưới dạng chuỗi.  
+
+
+### Example
+Chúng ta có thể triển khai 1 protocol `Size` tổng quát cho tất cả các cấu trúc dữ liệu có kích thước được tính toán trước sẽ triển khai, như sau:  
+```bash
+defprotocol Size do
+  @doc "Calculates the size (and not the length!) of a data structure"
+  def size(data)
+end
+```
+Protocol `Size` mong đợi 1 hàm có tên là `size` nhận 1 đối số (cấu trúc dữ liệu mà chúng ta muốn biết kích thước) được triển khai. bây giờ chúng ta có thể triển khai giao thức protocol cho các cấu trúc dữ liệu có triển khai tuân thủ:  
+```elixir
+defimpl Size, for: BitString do
+  def size(string), do: byte_size(string)
+end
+
+defimpl Size, for: Map do
+  def size(map), do: map_size(map)
+end
+
+defimpl Size, for: Tuple do
+  def size(tuple), do: tuple_size(tuple)
+end
+```
+Chúng ta khôi triển khai protocol `Size` cho List vì không có thông tin "size" được tính toán trước cho list, và độ dài của list phải được tính toán với `length/1`. Bây giờ, với protocol đã được xác định và triển khai đang có, ta thử sử dụng:  
+```bash
+iex> Size.size("foo")
+3
+iex> Size.size({:ok, "hello"})
+2
+iex> Size.size(%{label: "some label"})
+1
+```
+
+
+### Protocols and structs (giao thức và cấu trúc)
+Sức mạnh mở rộng của Elixir xuất hiện khi protocol và struct được sử dụng cùng với nhau.  
+Chúng ta đã biết mặc dù struct là map nhưng chúng không chia sẻ các triển khai giao thức với map. Ví dụ, `MapSet` (set dựa trên map) được triển khai dưới dạng struct. hãy thử sử dụng giao thức `Size` với `MapSet`:  
+```bash
+iex> Size.size(%{})
+0
+iex> set = %MapSet{} = MapSet.new
+MapSet.new([])
+iex> Size.size(set)
+** (Protocol.UndefinedError) protocol Size not implemented for MapSet.new([]) of type MapSet (a struct)
+```
+
+Thay vì chi sẻ triển khai giao thức protocol với map, struct yêu cầu giao thức riêng của chúng. Vì `MapSet` có kích thước được tính toàn trước và có thể truy cập thông qua `MapSet.size/1`, chúng ta có thể định nghĩa triển khai `Size` cho nó:  
+```bash
+defimpl Size, for: MapSet do
+  def size(set), do: MapSet.size(set)
+end
+```
+Nếu muốn, bạn có thể đưa ra ngữ nghĩa riêng cho kích thước của struct.  
+```bash
+defmodule User do
+  defstruct [:name, :age]
+end
+
+defimpl Size, for: User do
+  def size(_user), do: 2
+end
+```
+
+
+### Implementing Any
+Việc triển khai thủ công các giao thức protocol cho mọi loại có thể nhanh chóng trở nên lặp lại và nhàm chán. Trong trường hợp này, Elixir cung cấp 2 tùy chọn: chúng ta có thể dẫn suất derive cách triển khai giao thức protocol 1 cách rõ ràng cho các kiểu của mình hoặc tự động triển khai giao thức protocol cho tất cả các kiểu. Trong cả 2 trường hợp, chúng ta cần triển khai giao thức protocol cho `Any`.  
+
+### Deriving (dẫn xuất)
+Elixir cho phép chúng ta tạo ra 1 triển khai giao thức protocol dựa trên triển khai `Any`. Trước tiên triển khai `Any` như sau:  
+```bash
+defimpl Size, for: Any do
+  def size(_), do: 0
+end
+```
+Có thể nói rằng việc triển khai ở trên không hợp lý. Ví dụ, không có ý nghĩa gì khi nói rằng kích thướng của `PID` hoặc `Integer` là 0.  
+
+Tuy nhiên, để làm việc tốt với `Any` chúng ta cần phải yêu cầu struct dẫn xuất giao thức protocol `Size` tường minh:  
+```bash
+defmodule OtherUser do
+  @derive [Size]
+  defstruct [:name, :age]
+end
+```
+Khi dẫn xuất, Elixir sẽ triển khai giao thức `Size` cho `OtherUser` dựa trên triển khai được cung cấp cho `Any`.  
+
+
+### Fallback to Any (Quay lại Any)
+Một giải pháp thay thế khác cho `@derive` là yêu cầu rõ ràng giao thức chuyển sang fallback `Any` khi không tìm thấy triển khai. Điều này có thể đạt được bằng cách đặt `@fallback_to_any` thành `true` trong định nghĩa giao thức protocol:  
+```bash
+defprotocol Size do
+  @fallback_to_any true
+  def size(data)
+end
+```
+Vì việc triển khai `Size` cho `Any` không phải là việc có thể áp dụng cho bất kỳ dữ liệu nào, cho nên `@fallback_to_any` là 1 hành vi tùy chọn. Đối với phần lớn giao thức protocol, việc đưa ra lỗi khi 1 giao thức không được triển khai là hành vi phù hợp. Với triển khai `Any` như vầy:  
+```bash
+defimpl Size, for: Any do
+  def size(_), do: 0
+end
+```
+thì tất cả các kiểu dữ liệu nào, bao gồm struct, mà chưa triển khai giao thức `Size` sẽ được coi là có kích thước 0.  
+
+
+### Built-in protocols (giao thức tích hợp)
+Elixir đi kèm với một số giao thức tích hợp build-in protocol. Ví dụ module `Enum` cung cấp nhiều hàm hoạt động với bất kỳ cấu trúc dữ liệu nào triển khai giao thức `Enumerable`:  
+```bash
+iex> Enum.map([1, 2, 3], fn x -> x * 2 end)
+[2, 4, 6]
+iex> Enum.reduce(1..3, 0, fn x, acc -> x + acc end)
+6
+```
+
+Một ví dụ hữu ích khác là giao thức `String.Chars`, giao thức này chỉ định các chuyển đổi cấu trúc dữ liệu thành dạng biểu diễn thân thiện dưới dạng chuỗi. Giao thức này được thể hiện qua hàm `to_string`:  
+```bash
+iex> to_string(:hello)
+"hello"
+```
+
+Lưu ý rằng nội suy chuỗi trong Elixir gọi hàm `to_string`:  
+```bash
+iex> "age: #{25}"
+"age: 25"
+```
+Đoạn mã trên hoạt động vì number có thực thi giao thức `String.Chars`, còn nếu truyền 1 tuple thì sẽ dẫn đến lỗi.  
+```bash
+iex> tuple = {1, 2, 3}
+{1, 2, 3}
+iex> "tuple: #{tuple}"
+** (Protocol.UndefinedError) protocol String.Chars not implemented for {1, 2, 3} of type Tuple
+```
+
+Khi cần in 1 cấu trúc dữ liệu phức tạp hơn, người ta có thể sử dụng hàm `inspect` dựa trên giao thức `Inspect`:  
+```bash
+iex> "tuple: #{inspect(tuple)}"
+"tuple: {1, 2, 3}"
+```
+
+Giao thức `Inspect` là giao thức được sử dụng để chuyển đổi bất kỳ cấu trúc dữ liệu nào thành dạng văn bản có thể đọc được. Đây là những gì mà công cụ IEx sử dụng để in kết quả:  
+```bash
+iex> {1, 2, 3}
+{1, 2, 3}
+iex> %User{}
+%User{name: "john", age: 27}
+```
+
+Nhớ rằng, thoe quy ước, bất cứ khi nào giá trị được kiểm tra (inspected) bắt đầu bằng `#`, nó sẽ biểu diễn 1 cấu trúc dữ liệu theo cú pháp Elixir không hợp lệ. Điều này có nghĩa là giao thức inspect không thể đảo ngược vì thông tin có thể bị mất trong quá trình thực hiện:  
+```bash
+iex> inspect &(&1+2)
+"#Function<6.71889879/1 in :erl_eval.expr/5>"
+```
 
 
 
