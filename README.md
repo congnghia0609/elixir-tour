@@ -1861,6 +1861,106 @@ end
 ```
 
 
+## Structs (Cấu trúc)
+Struct là phần mở rộng được xây dựng trên map, cung cấp các giá trị mặc định và kiểm tra thời gian biên dịch compile-time.  
+
+### Defining structs (định nghĩa cấu trúc)
+Để định nghĩa cấu trúc struct ta dùng `defstruct/1`:  
+```bash
+iex(1)> defmodule User do
+...(1)> defstruct name: "John", age: 27
+...(1)> end
+{:module, User,
+ <<70, 79, 82, 49, 0, 0, 8, 244, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 247,
+   0, 0, 0, 22, 11, 69, 108, 105, 120, 105, 114, 46, 85, 115, 101, 114, 8, 95,
+   95, 105, 110, 102, 111, 95, 95, 10, 97, ...>>, %User{name: "John", age: 27}}
+```
+Danh sách từ khóa sử dụng với `defstruct` xác định các trường fields cùng với giá trị mặc định của chúng. Struct lấy tên của module mà chúng được định nghĩa. Trong ví dụ trên, chúng ta đã định nghĩa 1 struct có tên là `User`.  
+Bây giờ chúng ta có thể tạo Struct `User` bằng cú pháp tương tự với cú pháp được sử dụng để tạo map:  
+```bash
+iex(2)> %User{}
+%User{name: "John", age: 27}
+iex(3)> %User{name: "Jane"}
+%User{name: "Jane", age: 27}
+```
+Struct cung cấp đảm bảo tại thời điểm biên dịch rằng chỉ những trường fields được xác định thông qua defstruct mới được phép tồn tại trong struct:  
+
+
+### Accessing and updating structs (Truy cập và cập nhật cấu trúc)
+Struct có cùng cú pháp truy cập và cập nhật các trường field giống với map với khóa cố định:  
+```bash
+iex(4)> john = %User{}
+%User{name: "John", age: 27}
+iex(5)> john.name 
+"John"
+iex(6)> jane = %{john | name: "Jane"}
+%User{name: "Jane", age: 27}
+iex(7)> %{jane | oops: :field}
+** (KeyError) key :oops not found in: %User{name: "Jane", age: 27}
+```
+Khi sử dụng cú pháp cập nhật `|`, Elixir biết rằng không có khóa mới nào được thêm vào struct, cho phép map ở bên dưới chia sẻ cấu trúc của chúng trong bộ nhớ. Trong ví dụ trên cả john và jane đều chia sẻ cùng 1 cấu trúc khóa trong bộ nhớ.  
+
+Struct cũng có thể sử dụng khớp mẫu pattern matching, để so khớp giá trị của các khóa cụ thể cũng như để đảm bảo rằng giá trị so khớp là 1 struct có cùng kiểu với giá trị được so khớp.  
+```bash
+iex(7)> %User{name: name} = john 
+%User{name: "John", age: 27}
+iex(8)> name 
+"John"
+iex(9)> %User{} = %{}
+** (MatchError) no match of right hand side value: %{}
+```
+
+
+### Structs are bare maps underneath (Cấu trúc là map trống ở bên dưới)
+Struct chỉ đơn giản là map có trường đặc biệt là `__struct__` chứa tên của struct:  
+```bash
+iex(9)> is_map(john)
+true
+iex(10)> john.__struct__
+User
+```
+Tuy nhiên struct không kế thừa bất kỳ giao thức nào mà map thực hiện. Ví dụ, bạn không thể liệt kê hoặc truy cập 1 struct bằng:  
+```bash
+iex(11)> john[:name]
+** (UndefinedFunctionError) function User.fetch/2 is undefined (User does not implement the Access behaviour
+iex(11)> Enum.each(john, fn {field, value} -> IO.puts(value) end)
+** (Protocol.UndefinedError) protocol Enumerable not implemented for type User (a struct)
+```
+Struct cung cấp tính năng quan trọng nhất là: đa hình dữ liệu data polymorphism.  
+
+
+### Default values and required keys (giá trị mặc định và khóa bắt buộc)
+Nếu bạn không chỉ định key value mặc định khi định nghĩa struct, `nil` sẽ được gán mặc định:  
+```bash
+iex(11)> defmodule Product do 
+...(11)> defstruct [:name]
+...(11)> end
+{:module, Product,
+ <<70, 79, 82, 49, 0, 0, 8, 208, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 0, 250,
+   0, 0, 0, 22, 14, 69, 108, 105, 120, 105, 114, 46, 80, 114, 111, 100, 117, 99,
+   116, 8, 95, 95, 105, 110, 102, 111, 95, ...>>, %Product{name: nil}}
+iex(12)> %Product{}
+%Product{name: nil}
+```
+Bạn cũng có thể bắt buộc phải chỉ định 1 số khóa nhất định khi tạo struct thông qua thuộc tính module `@enforce_keys`:  
+```bash
+iex(13)> defmodule Car do
+...(13)> @enforce_keys [:make]
+...(13)> defstruct [:model, :make]
+...(13)> end
+{:module, Car,
+ <<70, 79, 82, 49, 0, 0, 11, 184, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 1, 80,
+   0, 0, 0, 31, 10, 69, 108, 105, 120, 105, 114, 46, 67, 97, 114, 8, 95, 95,
+   105, 110, 102, 111, 95, 95, 10, 97, 116, ...>>, %Car{model: nil, make: nil}}
+iex(14)> %Car{}
+** (ArgumentError) the following keys must also be given when building struct Car: [:make]
+    expanding struct: Car.__struct__/1
+    iex:14: (file)
+```
+enforce_keys cung cấp 1 đảm bảo lúc biên dịch đơn giản để hỗ trợ các nhà phát triển khi xây dựng các struct. Nó không được thực thi trên các bản cập nhật và không cung cấp bất kỳ loại xác thực giá trị nào.  
+
+
+
 
 
 
