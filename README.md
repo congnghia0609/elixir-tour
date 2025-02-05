@@ -2148,5 +2148,100 @@ iex> inspect &(&1+2)
 ```
 
 
+## Comprehensions (nhận thức)
+Trong Elixir, việc lặp qua 1 `Enumerable` là phổ biến, thường lọc ra 1 số kết quả và ánh xạ giá trị vào 1 danh sách khác. Comprehensions là 1 cú pháp hoàn hảo cho những cấu trúc như vậy: Chúng nhóm những nhiệm vụ chung đó thành dạng đặt biệt của `for`:  
+Ví dụ, chúng ta có thể ánh xạ 1 danh sách các số nguyên thành các giá trị bình phương của chúng:  
+```bash
+iex(1)> for n <- [1, 2, 3, 4], do: n * n 
+[1, 4, 9, 16]
+```
+Comprehensions được tạo thành từ 3 phần: bộ sinh generator, bộ lọc filter, và collectables.  
+
+
+### Generators and filters (bộ tạo và bộ lọc)
+Trong biểu thức trên, `n <- [1, 2, 3, 4]` là bộ tạo generator. Bất kỳ enumerable nào cũng có thể thể được truyền vào phía bên phải của biểu thức bộ tạo generator:  
+```bash
+iex(2)> for n <- 1..4, do: n * n
+[1, 4, 9, 16]
+```
+
+Biểu thức bộ tạo cũng hỗ trợ việc khớp mẫu ở phía bên trái của chúng; tất cả các mẫu không khớp đều bị bỏ qua. Ví dụ, chúng ta có 1 danh sách từ khóa trong đó có khóa atom `:good` và `:bad`, và chúng ta chỉ muốn tính bình phương các giá trị của khóa `:good`:  
+```bash
+iex(3)> values = [good: 1, good: 2, bad: 3, good: 4]
+[good: 1, good: 2, bad: 3, good: 4]
+iex(4)> for {:good, n} <- values, do: n * n
+[1, 4, 16]
+```
+
+Ngoài việc khớp mẫu, bộ lọc có thể được sử dụng để chọn 1 số phần tử cụ thể. Ví dụ, chúng ta có thể chọn bội số của 3 và loại bỏ tất cả các phần tử khác:  
+```bash
+iex(5)> for n <- 0..5, rem(n, 3) == 0, do: n * n
+[0, 9]
+```
+
+Comprehensions sẽ loại bỏ tất cả các phần tử mà biểu thức lọc trả về giá trị `false` hoặc `nil`; tất cả các giá trị khác đều được chọn.  
+
+Comprehensions thường cung cấp cách biểu diễn ngắn gọn hơn nhiều so với việc sử dụng các hàm tương đương từ các module `Enum` và `Stream`. Hơn nữa, Comprehensions cũng cho phép nhiều bộ tạo và bộ lọc được đưa ra. Sau đây là 1 ví dụ nhận được danh sách các thư mục là lấy kích thước của từng tệp trong các thư mục đó:  
+```bash
+dirs = ["/home/mikey", "/home/james"]
+
+for dir <- dirs,
+    file <- File.ls!(dir),
+    path = Path.join(dir, file),
+    File.regular?(path) do
+  File.stat!(path).size
+end
+```
+
+Nhiều bộ tạo cũng có thể được sử dụng để tính tích Descartes của 2 danh sách:  
+```bash
+iex(6)> for i <- [:a, :b, :c], j <- [1, 2], do: {i, j}
+[a: 1, a: 2, b: 1, b: 2, c: 1, c: 2]
+```
+
+Cuối cùng, hãy nhớ rằng các phép gán biến bên trong phạm vi Comprehensions, dù là trong bộ tạo, bộ lọc hay bên trong khối code, đều không được phản ánh ra bên ngoài Comprehensions.
+
+
+### Bitstring generators (bộ tạo Bitstring)
+Bộ tạo Bitstring cũng được hỗ trợ và rất hữu ích khi bạn cần comprehend trên nhiều luồng bitstrings. Ví dụ bên dưới nhận 1 danh sách các điểm ảnh từ 1 binary với các giá trị đỏ, xanh lá cây và xanh lam tương ứng và chuyển đổi chúng thành các bộ tuple gồm 3 phần tử:  
+```bash
+iex(7)> pixels = <<213, 45, 132, 64, 76, 32, 76, 0, 0, 234, 32, 15>>
+<<213, 45, 132, 64, 76, 32, 76, 0, 0, 234, 32, 15>>
+iex(8)> for <<r::8, g::8, b::8 <- pixels>>, do: {r, g, b}
+[{213, 45, 132}, {64, 76, 32}, {76, 0, 0}, {234, 32, 15}]
+```
+Bộ tạo bitstring có thể được kết hợp với các bộ tạo enumerable "thông thường", và cũng hỗ trợ bộ lọc.  
+
+
+### The :into option (tùy chọn :into)
+Trong các ví dụ trên, tất cả các comprehension đều trả về danh sách dưới dạng kết quả của chúng. Tuy nhiên, kết quả của comprehension có thể được chèn vào các cấu trúc dữ liệu khác nhau bằng cách truyền tùy chọn `:into` vào comprehension.  
+Vì dụ, bộ tạo bitstring có thể được sử dụng với tùy chọn `:into` để dễ dàng xóa tất cả các khoảng trắng trong chuỗi:  
+```bash
+iex(9)> for <<c <- " hello world ">>, c != ?\s, into: "", do: <<c>>
+"helloworld"
+```
+
+Sets, map và các dictionaries khác cũng có thể được đưa vào tùy chọn `:into`. Nhìn chung, `:into` chập nhận bất kỳ cấu trúc dữ liệu nào triển khai giao thức `Collectable` protocol.  
+Một trường hợp sử dụng phổ biến của `:into` có thể là chuyển đổi các giá trị trong map:  
+```bash
+iex(10)> for {key, val} <- %{"a" => 1, "b" => 2}, into: %{}, do: {key, val * val}
+%{"a" => 1, "b" => 4}
+```
+
+Một ví dụ khác sử dụng stream. Module `IO` cung cấp stream (cả `Enumerable` và `Collectable`) một thiết bị đầu cuối echo phản hồi lại phiên bản viết hoa của bất kỳ kiểu dữ liệu nào được nhập, có thể được triển khai bằng cách sử dụng các comprehension:  
+```bash
+iex> stream = IO.stream(:stdio, :line)
+iex> for line <- stream, into: stream do
+...>   String.upcase(line) <> "\n"
+...> end
+```
+
+### Other options
+Comprehensions hỗ trợ các tùy chọn khác, chẳng hạn như: `:reduce` và `:uniq`. Có thể tìm hiểu thêm về comprehensions theo các link sau:  
+- [`for` official reference in Elixir documentation](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#for/1)
+- [Mitchell Hanberg's comprehensive guide to Elixir's comprehensions](https://www.mitchellhanberg.com/the-comprehensive-guide-to-elixirs-for-comprehension/)
+
+
+
 
 
