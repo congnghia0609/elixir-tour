@@ -2242,6 +2242,197 @@ Comprehensions hỗ trợ các tùy chọn khác, chẳng hạn như: `:reduce` 
 - [Mitchell Hanberg's comprehensive guide to Elixir's comprehensions](https://www.mitchellhanberg.com/the-comprehensive-guide-to-elixirs-for-comprehension/)
 
 
+## Sigils (dấu ấn)
+Một trong những mục tiêu của Elixir là khả năng mở rộng: các nhà phát triển phải có khả năng mở rộng ngôn ngữ để phù hợp với bất kỳ lĩnh vực cụ thể nào. Dấu ấn sigils cung cấp nền tảng cho việc mở rộng ngôn ngữ với các cách biểu diễn văn bản tùy chính. Dấu ấn sigils bắt đầu bằng ký tự `~` theo sau là 1 chữ cái thường hoặc 1 hay nhiều chữ cái viết hoa, sau đó là 1 dấu phân cách delimiter. Các sửa đổi tùy chọn được thêm vào sau dấu phân cách cuối cùng. Ví dụ: `~c"hello world"`.  
+
+
+## Regular expressions (biểu thức chính quy)
+Dấu ấn sigils phổ biến nhất trong Elixir là `~r` được sử dụng để tạo biểu thức chính quy regular expressions:  
+```bash
+iex(1)> regex = ~r/foo|bar/
+~r/foo|bar/
+iex(2)> "foo" =~ regex 
+true
+iex(3)> "bat" =~ regex
+false
+```
+
+Elixir cung cấp các biểu thức chính quy tương thích với Perl (regexe), được triển khai bởi thư viện PCRE. Regexe cũng hỗ trợ các trình sửa đổi. Ví dụ, trình sửa đổi `i` làm cho 1 biểu thức chính quy không phân biệt chữ hoa chữ thường:  
+```bash
+iex(4)> "HELLO" =~ ~r/hello/
+false
+iex(5)> "HELLO" =~ ~r/hello/i
+true
+```
+
+Sigils hỗ trợ 8 dấu phân cách khác nhau:  
+```bash
+~r/hello/
+~r|hello|
+~r"hello"
+~r'hello'
+~r(hello)
+~r[hello]
+~r{hello}
+~r<hello>
+```
+Lý do đằng sau việc hỗ trợ các dấu phân cách khác nhau là để cung cấp 1 cách để viết các ký tự mà không cần dấu phân cách thoát. Ví dụ, 1 biểu thức chính quy với dấu gạch chép như `~r(^http?://)` có thể đọc tốt hơn `~r/^http?:\/\//`. Tương tự như vậy, nếu biểu thức chính quy có dấu gạch chéo và bắt giữ nhóm capturing groups (sử dụng`()`), thì bạn có thể chọn dấu nháy kép thay cho dấu ngoặc đơn.  
+
+
+## Strings, charlists, and word lists sigils (Chuỗi, charlist và danh sách từ sigils)
+Bên cạnh biểu thức chính quy, Elixir còn đi kèm với 3 dấu ấn sigils khác.  
+
+### Strings
+Dấu ấn `~s` được sử dụng để tạo chuỗi, giống như dấu nháy kép. Dấu ấn `~s` hữu ích khi chuỗi chưa dấu nháy kép:  
+```bash
+iex(1)> ~s(this is a string with "double" quotes, not 'single' ones)
+"this is a string with \"double\" quotes, not 'single' ones"
+```
+
+
+### Charlists
+Dấu ấn `~c` là cách thông thường để biểu thị charlist.  
+```bash
+iex(2)> [?c, ?a, ?t]
+~c"cat"
+iex(3)> ~c(this is a char list containing "double quotes")
+~c"this is a char list containing \"double quotes\""
+```
+
+### Word lists
+Dấu ấn `~w` được sử dụng để tạo danh sách các từ (các từ chỉ là các chuỗi thông thường). Bên trong dấu `~w`, các từ được phân tách bằng khoảng trắng.  
+```bash
+iex(4)> ~w(foo bar bat)
+["foo", "bar", "bat"]
+```
+Dấu `~w` cũng chấp nhận các ký tự sửa đổi `c`, `s` và `a` (lần lượt cho charlist, strings và atom), chỉ định kiểu dữ liệu của các phần tử trong danh sách kết quả:  
+```bash
+iex(5)> ~w(foo bar bat)a
+[:foo, :bar, :bat]
+```
+
+
+## Interpolation and escaping in string sigils (Nội suy và thoát khỏi các dấu ấn chuỗi)
+Elixir hỗ trợ 1 số biến thể dấu ấn sigil để xử lý các ký tự thoát và nội suy. Đặc biệt, dấu ấn sigil chữ in hoa không thực hiện nội suy hoặc thoát. Ví dụ, mặc dù cá `~s` và `~S` đều trả về chuỗi, nhưng chuỗi trước cho phép mã thoát và nội suy trong khi chuỗi sau thì không:  
+```bash
+iex(6)> ~s(String with escape codes \x26 #{"inter" <> "polation"})
+"String with escape codes & interpolation"
+iex(7)> ~S(String without escape codes \x26 without #{interpolation})
+"String without escape codes \\x26 without \#{interpolation}"
+```
+Các mã thoát sau đây có thể được sử dụng trong chuỗi string và charlist:  
+- `\\`: dấu gạch chéo ngược đơn single backslash
+- `\a`: chuông / báo động bell/alert
+- `\b`: phím xóa lùi <- Back
+- `\d`: phím xóa delete
+- `\e`: phím thoát escape
+- `\f`: form feed
+- `\n`: xuống dòng newline
+- `\r`: carriage return
+- `\s`: khoảng trắng space
+- `\t`: tab
+- `\v`: tab dọc vertical tab
+- `\0`: null byte
+- `\xDD`: biểu diễn 1 byte đơn trong hệ thập lục phân, ví dụ `\x13`
+- `\uDDDD` và `\u{D...}`: biểu diễn 1 điển mã Unicode codepoint ở dạng thập lục phân, ví dụ `\u{1F600}`
+
+Ngoài ra, dấu nháy kép bên trong bên trong chuỗi được đặt trong nháy kép cần được thoát bằng `\"`, và tương tự như vậy với dấu nháy đơn là `\'`. Tuy nhiên, tốt hơn hết là nên thay đổi các dấu phân cách như đã nói ở trên thay vì thoát escape chúng.  
+Dấu ấn sigil cũng hỗ trợ heredocs, tức là 3 dấu nháy kép hoặc nháy đơn làm dấu phân cách:  
+```bash
+iex> ~s"""
+...> this is
+...> a heredoc string
+...> """
+```
+
+Nếu heredoc có sử dụng nhiều dấu nháy kép và nháy đơn thì đây là giải pháp tốt để viết:  
+```bash
+@doc ~S"""
+Converts double-quotes to single-quotes.
+
+## Examples
+
+    iex> convert("\"foo\"")
+    "'foo'"
+
+"""
+def convert(...)
+```
+
+
+## Calendar sigils (Dấu ấn lịch)
+Elixir cung cấp nhiều dấu ấn để giải quyết nhiều loại thời gian time và ngày tháng date khác nhau.  
+
+### Date (ngày tháng)
+Cấu trúc `%Date{}` struct chứa nhiều trương `year`, `month`, `day`, và `calendar`. Bạn có thể tạo 1 cấu trúc bằng cách sử dụng dấu ấn `~D`:  
+```bash
+iex(8)> d = ~D[2019-10-31]
+~D[2019-10-31]
+iex(9)> d.day
+31
+```
+
+### Time
+Cấu trúc `%Time{}` struct chứa các trường `hour`, `minute`, `second`, `microsecond`, và `calendar`. Bạn có thể tạo cấu trúc bằng dấu ấn `~T`:  
+```bash
+iex(10)> t = ~T[23:00:07.0]
+~T[23:00:07.0]
+iex(11)> t.second
+7
+```
+
+### NaiveDateTime (Ngày giờ ngây thơ)
+Cấu trúc `%NaiveDateTime{}` struct chứa các trường cả `Date` và `Time`. Bạn có thể tạo bằng dấu ấn `~N`:  
+```bash
+iex(12)> ndt = ~N[2019-10-31 23:00:07]
+~N[2019-10-31 23:00:07]
+```
+Tại sao gọi là ngây thơ? Vì nó không chứa thông tin múi giờ timezone. Do đó, ngày giờ cụ thể có thể không tồn tại hoặc có thể tồn tại 2 lần trong 1 số múi giờ nhất định, ví dụ chúng ta chỉnh đồng hồ lùi lại và tiến lên.  
+
+
+## UTC DateTime
+Cấu trúc `%DateTime{}` struct chứa các trường giống như `NaiveDateTime` với việc bổ dung các trường để theo dõi múi giờ timezone. Dấu ấn `~U` cho phép ta tạo DateTime theo múi giờ UTC:  
+```bash
+iex(13)> dt = ~U[2019-10-31 19:59:03Z]
+~U[2019-10-31 19:59:03Z]
+iex(14)> %DateTime{minute: minute, time_zone: time_zone} = dt
+~U[2019-10-31 19:59:03Z]
+iex(15)> minute 
+59
+iex(16)> time_zone 
+"Etc/UTC"
+```
+
+
+## Custom sigils (Dấu ấn tùy chỉnh)
+Dấu ấn sigil trong Elixir có thể mở rộng. Trên thực tế, sử dụng sigil `~r/foo/i` tương đương với việc gọi `sigil_r` với 1 binary và 1 charlist làm đối số:  
+```bash
+iex(17)> sigil_r(<<"foo">>, [?i])
+~r/foo/i
+```
+Chúng ta có thể truy cập tài liệu về sigil `~r` thông qua `sigil_r`:  
+```bash
+iex(18)> h sigil_r
+...
+```
+Chúng ta cũng có thể cung cấp sigil của riêng mình bằng cách triển khai các hàm theo mẫu `sigil_{character}`. Ví dụ, cùng triển khai sigil `~i` trả về 1 số nguyên (với bộ điều chỉnh tùy chọn `n` để làm cho nó âm):  
+```bash
+iex> defmodule MySigils do
+...>   def sigil_i(string, []), do: String.to_integer(string)
+...>   def sigil_i(string, [?n]), do: -String.to_integer(string)
+...> end
+iex> import MySigils
+iex> ~i(13)
+13
+iex> ~i(42)n
+-42
+```
+Dấu ấn sigil tùy chỉnh có thể là 1 ký tự thường hoặc 1 ký tự viết hoa theo sau là nhiều ký tự viết hoa và chữ số.  
+
+Dấu ấn sigil cũng có thể được sử dụng để thực hiện công việc tại lúc biên dịch với sự trợ giúp của macro. Ví dụ, biểu thức chính quy trong Elixir được biên dịch thành 1 biểu diễn hiệu quả trong quá trình biên dịch mã nguồn, do đó bỏ qua bước này khi chạy. Nếu bạn quan tâm đến chủ đề này, bạn có thể tìm hiểu thêm về macro và xem cách sigil được triển khai trong module `Kernel`, nơi các hàm `sigil_*` được định nghĩa.  
+
+
+
 
 
 
