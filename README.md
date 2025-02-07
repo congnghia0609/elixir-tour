@@ -2609,6 +2609,58 @@ Chính hệ thống giám sát này khiến cho các cấu trúc như `try/catch
 
 
 ### After
+Đôi khi cần phải đảm bảo dọn sạch tài nguyên sau 1 số hành động có khả năng gây ra lỗi. Cấu trúc `try/after` cho phép bạn làm điều đó. Ví dụ, chúng ta có thể mở 1 file và sử dụng mệnh đề `after` để đóng file đó - kể cả khi có sự cố xảy ra:  
+```bash
+{:ok, file} = File.open("sample", [:utf8, :write])
+try do
+  IO.write(file, "olá")
+  raise "oops, something went wrong"
+after
+  File.close(file)
+end
+** (RuntimeError) oops, something went wrong
+```
+Mệnh đề `after` sẽ được thực thi bất kể khối lệnh `try` có thành công hay không. Tuy nhiên, lưu ý rằng nếu 1 tiến trình được liên kết thoát `exit`, tiến trình này sẽ thoát và mệnh đề `after` sẽ không được chạy. Do đó, `after` chỉ cung cấp 1 đảm bảo mềm. May mắn thay, các file trong Elixir cũng được liên kết với các tiến trình hiện tại và do đó chúng sẽ luôn được đóng nếu tiến trình hiện tại bị sập, không phụ thuộc vào mệnh đề `after`. bạn sẽ thấy điều tương tự cũng đúng với các tài nguyên khác như bảng ETS, socket, ports và v.v.  
+
+Đôi khi bạn có thể muốn bao bọc toàn bộ phần thân của 1 hàm trong 1 cấu trúc `try`, thường là để đảm bảo 1 số mã sẽ được thực thi sau đó. Trong những trường hợp như vậy, Elixir cho phép bạn bỏ qua dòng `try`:  
+```bash
+defmodule RunAfter do
+  def without_even_trying do
+    raise "oops"
+  after
+    IO.puts("cleaning up!")
+  end
+end
+RunAfter.without_even_trying
+cleaning up!
+** (RuntimeError) oops
+```
+Elixir sẽ tự động gói phần thân hàm trong mệnh đề `try` bất cứ khi nào 1 trong các lệnh `after`, `rescue` hoặc `catch` được chỉ định. Khối `after` xử lý các hiệu ứng phụ và không thay đổi giá trị trả về từ các mệnh đề phía trên nó.  
+
+
+### Else
+Nếu có 1 khối `else`, nó sẽ khớp với kết quả của khối `try` bất cứ khi nào khối `try` kết thúc mà không có lệnh `throw` hoặc `error`.  
+```bash
+x = 2
+2
+try do
+  1 / x
+rescue
+  ArithmeticError ->
+    :infinity
+else
+  y when y < 1 and y > -1 ->
+    :small
+  _ ->
+    :large
+end
+:small
+```
+Ngoại lệ trong khối `else` không được bắt. Nếu không có mẫu nào bên trong khối `else` khớp, ngoại lệ sẽ được đưa ra; ngoại lệ này không được bắt bởi khối `try/catch/rescue/after` hiện tại.  
+
+
+## Variables scope (tầm vực biến)
+
 
 
 
