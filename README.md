@@ -2524,6 +2524,50 @@ Nhiều hàm trong thư viện chuẩn tuân tho mô hình có 1 đối tác t�
 
 
 ### Fail fast / Let it crash (thất bại nhanh chóng / hãy để nó sụp đổ)
+1 câu nói phổ biến trong cộng đồng Erlang, cũng như Elixir, là "thất nại nhanh chóng" / "hãy để nó sụp đổ". Ý tưởng đằng sau việc cho nó sụp đổ là trong trường hợp có điều gì bất ngờ xảy ra, tốt nhất là để ngoại lệ xẩy ra mà không cần cứu nó.  
+
+Điều quan trọng là phải nhấn mạnh từ bất ngờ. Ví dụ, tưởng tượng bạn đang xây dựng 1 tập lệnh để xử lý file. Tập lệnh của bạn nhận tên file làm đầu vào. Người dùng có thể mắc lỗi và cung cấp tên file không xác định. Trong trường hợp này, mặc dù bạn có thể sử dụng `File.read!/1` để đọc file và để nó sập trong trường hợp tên file không hợp lệ, nhưng có lẽ sẽ hợp lý hơn khi sử dụng `File.read/1` và cung cấp cho người dùng 1 tập lệnh của bạn phản hồi rõ ràng và chính xác về lỗi xảy ra.  
+
+
+### Reraise
+Mặc dù chúng ta thường tránh sử dụng `try/rescue` trong Elixir, 1 tính huống mà chúng ta có thể muốn sử dụng các cấu trúc như vậy là để quan sát/giám sát (Observabilitty/monitoring). Hãy tưởng tượng bạn muốn ghi lại rằng có điều gì đó không ổn, bạn có thể làm:  
+```bash
+try do
+  ... some code ...
+rescue
+  e ->
+    Logger.error(Exception.format(:error, e, __STACKTRACE__))
+    reraise e, __STACKTRACE__
+end
+```
+Trong ví dụ trên, chúng ta đã giải cứu ngoại lệ, ghi lại ngoại lệ và sau đó nêu lại re-raised. Chúng ta sử dụng cấu trúc `__STACKTRACE__` khi định dạng ngoại lệ và nêu lại. Điều này đảm bảo chúng ta sẽ đưa lại ngoại lệ như hiện tại mà không thay đổi giá trị hoặc nguồn gốc của nó.  
+
+Nói chung, chúng ta hiểu lỗi trong Elixir theo nghĩa đen: chúng dành cho những tình huống bất ngờ và/hoặc ngoại lệ, không bao giờ dùng để kiểm soát luồng mã của chúng ta. Trong trường hợp bạn thực sự cần các cấu trúc kiểm soát luồng, hãy sử dụng `throws`. Đó là những gì chúng ta sẽ thấy tiếp theo.  
+
+
+### Throws (ném)
+Trong Elixir, 1 giá trị có thể được ném ra và sau đó đuôc bắt lại. `throw` và `catch` được dành riêng cho những tình huống không thể lấy lại giá trị trừ khi sử dụng `throw` và `catch`.
+Những tình huống đó khá hiếm gặp trong thực tế, trừ khi tiếp với các thư viện không cung cấp API phù hợp. Ví dụ, tưởng tượng module `Enum` không cung cấp bất kỳ API nào để tìm giá trị và chúng ta cần tìm bội số đầu tiên của 13 trong danh sách các số:  
+```bash
+try do
+  Enum.each(-50..50, fn x ->
+    if rem(x, 13) == 0, do: throw(x)
+  end)
+  "Got nothing"
+catch
+  x -> "Got #{x}"
+end
+"Got -39"
+```
+Từ khi `Enum` cung cấp API phù hợp nêu trên, trong thực tế `Enum.find/2` là giải pháp phù hợp:  
+```bash
+Enum.find(-50..50, &(rem(&1, 13) == 0))
+-39
+```
+
+
+### Exits (thoát)
+
 
 
 
