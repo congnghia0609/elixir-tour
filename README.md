@@ -2660,10 +2660,45 @@ Ngoại lệ trong khối `else` không được bắt. Nếu không có mẫu n
 
 
 ## Variables scope (tầm vực biến)
+Tương tự như `case`, `cond`, `if` và các cấu trúc khác trong Elixir, các biến được định nghĩa bên trong các khối `try/catch/rescue/after` không bị rò rỉ ra ngữ cảnh bên ngoài. Nói cách khác, mã này không hợp lệ:  
+```bash
+try do
+  raise "fail"
+  what_happened = :did_not_raise
+rescue
+  _ -> what_happened = :rescued
+end
+what_happened
+** (CompileError) undefined variable "what_happened"
+```
+Thay vào đó, bạn nên trả về giá trị của biểu thức `try`:  
+```bash
+what_happened =
+  try do
+    raise "fail"
+    :did_not_raise
+  rescue
+    _ -> :rescued
+  end
+what_happened
+:rescued
+```
+
+Hơn nữa, các biến được định nghĩa trong khối do-block của `try` cũng không có sẵn trong `rescue/after/else`. Điều này là do khối `try` có thể lỗi bất cứ lúc nào và do đó các biến có thể chưa bao giờ được liên kết ngay từ đầu. Vì vậy, điều này cũng không hợp lệ:  
+```bash
+try do
+  raise "fail"
+  another_what_happened = :did_not_raise
+rescue
+  _ -> another_what_happened
+end
+** (CompileError) undefined variable "another_what_happened"
+```
+
+Như vậy có thể thấy `try`,`catch` và `rescue` trong Elixir ít được sử dụng hơn so với các ngôn ngữ khác.  
 
 
-
-
+## Writing documentation (viết tài liệu)
 
 
 
