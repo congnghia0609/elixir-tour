@@ -2432,6 +2432,100 @@ Dấu ấn sigil tùy chỉnh có thể là 1 ký tự thường hoặc 1 ký t�
 Dấu ấn sigil cũng có thể được sử dụng để thực hiện công việc tại lúc biên dịch với sự trợ giúp của macro. Ví dụ, biểu thức chính quy trong Elixir được biên dịch thành 1 biểu diễn hiệu quả trong quá trình biên dịch mã nguồn, do đó bỏ qua bước này khi chạy. Nếu bạn quan tâm đến chủ đề này, bạn có thể tìm hiểu thêm về macro và xem cách sigil được triển khai trong module `Kernel`, nơi các hàm `sigil_*` được định nghĩa.  
 
 
+## try, catch, and rescue (Thử, bắt và giải cứu)
+Elixir có 3 cơ chế lỗi: lỗi errors, ném throws, và thoát exits.  
+
+### Errors
+Errors (hoặc ngoại lệ exceptions) được sử dụng khi những điều bất thường xảy ra trong mã. Một ví dụ lỗi có thể tạo ra bằng cách công thêm 1 số vào atom:  
+```bash
+iex(1)> :foo + 1
+** (ArithmeticError) bad argument in arithmetic expression: :foo + 1
+    :erlang.+(:foo, 1)
+    iex:1: (file)
+```
+
+Một lỗi trong thời gian chạy có thể xảy ra bất cứ lúc nào bằng cách sử dụng `raise/1`:  
+```basg
+iex(1)> raise "oops"
+** (RuntimeError) oops
+    iex:1: (file)
+```
+
+Có thể đưa ra 1 lỗi khác bằng lệnh `raise/2` truyền tên lỗi và danh sách các đối số từ khóa:  
+```bash
+iex(1)> raise ArgumentError, message: "invalid argument foo"
+** (ArgumentError) invalid argument foo
+    iex:1: (file)
+```
+
+bạn cũng có thể tự định nghĩa mỗi của mình bằng cách tạo 1 module và sử dụng cấu trúc `defexception/1` bên trong module đó. Theo cách này bạn sẽ tạo ra 1 lỗi có tên giống với tên của module mà lỗi được định nghĩa. Trường hợp phổ biến nhất là định nghĩa 1 ngoại lệ tùy chỉnh với trường field thông báo message:  
+```bash
+iex(1)> defmodule MyError do
+...(1)>   defexception message: "default message"
+...(1)> end
+{:module, MyError,
+ <<70, 79, 82, 49, 0, 0, 12, 68, 66, 69, 65, 77, 65, 116, 85, 56, 0, 0, 1, 77,
+   0, 0, 0, 30, 14, 69, 108, 105, 120, 105, 114, 46, 77, 121, 69, 114, 114, 111,
+   114, 8, 95, 95, 105, 110, 102, 111, 95, ...>>, :ok}
+iex(2)> raise MyError 
+** (MyError) default message
+    iex:2: (file)
+iex(2)> raise MyError, message: "custom message"
+** (MyError) custom message
+    iex:2: (file)
+```
+
+Error có thể được khắc phục bằng cách sử dụng cấu trúc `try/rescue`:  
+```bash
+iex(2)> try do
+...(2)>   raise "oops"
+...(2)> rescue
+...(2)>   e in RuntimeError -> e
+...(2)> end
+%RuntimeError{message: "oops"}
+```
+Ví dụ trên giải quyết Error thời gian chạy và trả về một ngoại lệ của chính nó, sau đó được in trong `iex`.  
+Nếu bạn không có nhu cầu sử dụng ngoại lệ exception, bạn không cần phải truyền biến để để giải cứu `rescue`:  
+```bash
+iex(2)> try do
+...(2)>   raise "oops"
+...(2)> rescue
+...(2)>   RuntimeError -> "Error!"
+...(2)> end
+"Error!"
+```
+
+Trong thực tế, các nhà phát triển Elixir hiếm khi sử dụng cầu trúc `try/rescue`. Ví dụ nhiều ngôn ngữ sẽ buộc bạn phải rescue lỗi khi không thể mở file thành công. Thay vào đó, Elixir cung cấp hàm `File.read/1` trả về 1 bộ tuple chứa thông về việc file có được mở thành công hay không:  
+```bash
+iex> File.read("hello")
+{:error, :enoent}
+iex> File.write("hello", "world")
+:ok
+iex> File.read("hello")
+{:ok, "world"}
+```
+
+Không có `try/rescue` ở đây. Trong trường hợp bạn muốn xử lý nhiều kết quả khi 1 file, bạn có thể sử dụng khớp mẫu bằng cách sử dụng cấu trúc `case`:  
+```bash
+iex> case File.read("hello") do
+...>   {:ok, body} -> IO.puts("Success: #{body}")
+...>   {:error, reason} -> IO.puts("Error: #{reason}")
+...> end
+```
+Đối với những trường hợp bạn mong đợi 1 file tồn tại (và việc thiếp file đó thực sự là 1 lỗi), bạn có thể sử dụng `File.read!/1`:  
+```bash
+iex> File.read!("unknown")
+** (File.Error) could not read file "unknown": no such file or directory
+    (elixir) lib/file.ex:272: File.read!/1
+```
+Cuối cùng, chính ứng dụng của bạn sẽ quyết định xem lỗi mở file có phải là lỗi ngoại lệ hay không. Đó là lý do vì sao Elixir không áp đặt ngoại lệ cho `File.read/1` và nhiều hàm khác. Thay vào đó, nó để nhà phát triển tự chọn cách tốt nhất để tiến hành.  
+
+Nhiều hàm trong thư viện chuẩn tuân tho mô hình có 1 đối tác tạo ra ngoại lệ thay vì trả về các bộ tuple để khớp. Quy ước là tạo 1 hàm (`foo`) trả về các bộ `{:ok, resurl}` hoặc `{:error, reason}` và 1 hàm khác (`foo!` cùng tên nhưng có thêm ký tự theo sau `!`) có cùng đối số với `foo` nhưng sẽ phát sinh ngoại lệ nếu có lỗi. `foo!` sẽ trả về kết quả (không được gói trong 1 tuple) nếu mọi thứ diễn ra tốt đẹp. Module `File` là 1 ví dụ điển hình về quy ước này.  
+
+
+### Fail fast / Let it crash (thất bại nhanh chóng / hãy để nó sụp đổ)
+
+
 
 
 
