@@ -2567,7 +2567,48 @@ Enum.find(-50..50, &(rem(&1, 13) == 0))
 
 
 ### Exits (thoát)
+Tất cả mã của Elixir chạy bên trong các tiến trình giao tiếp với nhau. Khi 1 tiến trình chết vì nguyên nhân tự nhiên (ví dụ ngoại lệ chưa được xử lý), nó sẽ gửi tín hiệu thoát. Một tiến trình cũng có thể chết bằng cách gửi rõ ràng tín hiệu thoát `exit`:  
+```bash
+spawn_link(fn -> exit(1) end)
+** (EXIT from #PID<0.56.0>) shell process exited with reason: 1
+```
+Trong ví dụ trên, tiến trình được liên kết đã chết bằng cách gửi tín hiệu thoát `exit` có giá trị là 1. Elixir shell sẽ tự động xử lý những thông báo đó và in chúng ra thiết bị đầu cuối.  
+`exit` cũng có thể được bắt bằng cách sử dụng `try/catch`:  
+```bash
+try do
+  exit("I am exiting")
+catch
+  :exit, _ -> "not really"
+end
+"not really"
+```
 
+`catch` cũng có thể được sử dụng trong thân hàm mà không cần try tương ứng.  
+```bash
+defmodule Example do
+  def matched_catch do
+    exit(:timeout)
+  catch
+    :exit, :timeout ->
+      {:error, :timeout}
+  end
+
+  def mismatched_catch do
+    exit(:timeout)
+  catch
+    # Since no clause matches, this catch will have no effect
+    :exit, :explosion ->
+      {:error, :explosion}
+  end
+end
+```
+
+Tuy nhiên, việc sử dụng `try/catch` đã không còn phổ biến và việc sử dụng nó để bắt `exit` còn hiếm hơn.  
+Tín hiệu thoát `exit` là 1 phần quan trọng của hệ thống chịu lỗi do Erlang VM cung cấp. Các tiến trình thường chạy dưới cây giám sát supervision tree, bản thân chúng là các tiến trình lắng nghe tín hiệu thoát `exit` từ các tiến trình được giám sát. Khi nhận được tín hiệu thoát `exit`, chiến lược giám sát sẽ được kích hoạt và quá trình bị giám sát sẽ được khởi động lại.  
+Chính hệ thống giám sát này khiến cho các cấu trúc như `try/catch` và `try/rescue` trở nên không phổ biến trong Elixir. Thay vì cứu rỗi, chúng ta thà "thất bại nhanh chóng" vì cây giám sát sẽ đảm bảo ừng dụng của chúng ta sẽ trở lại trạng thái ban đầu đã biết sau khi xảy ra lỗi.  
+
+
+### After
 
 
 
