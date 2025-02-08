@@ -2700,5 +2700,73 @@ Như vậy có thể thấy `try`,`catch` và `rescue` trong Elixir ít được
 
 ## Writing documentation (viết tài liệu)
 
+### Markdown
+Tài liệu Elixir được viết bằng Markdown.  
+
+### Module Attributes (thuộc tính module)
+Tài liệu trong Elixir thường được đính kèm vào các thuộc tính của module. Xem ví dụ:  
+
+```bash
+defmodule MyApp.Hello do
+  @moduledoc """
+  This is the Hello module.
+  """
+  @moduledoc since: "1.0.0"
+
+  @doc """
+  Says hello to the given `name`.
+
+  Returns `:ok`.
+
+  ## Examples
+
+      iex> MyApp.Hello.world(:john)
+      :ok
+
+  """
+  @doc since: "1.3.0"
+  def world(name) do
+    IO.puts("hello #{name}")
+  end
+end
+```
+Thuộc tính `@moduledoc` được sử dụng để thêm tài liệu vào module. `@doc` được sử dụng trước 1 hàm để cung cấp tài liệu cho hàm đó. Bên cạnh các thuộc tính trên, `@typedoc` cũng có thể được sử dụng để đính kèm tài liệu vào các kiểu được xác định là 1 phần của typespec.  
+
+
+### Function arguments (đối số hàm)
+Khi ghi tài liệu cho hàm, tên đối số được trình biên dịch suy ra. Ví dụ:  
+```bash
+def size(%{size: size}) do
+  size
+end
+```
+Trình biên dịch sẽ suy ra đối số này dưới dạng `map`. Đôi khi suy luận sẽ không tối ưu, đặ biệt nếu hàm chứa nhiều mệnh đề với đối số khớp với các giá trị mỗi lần khác nhau. Bạn có thể chỉ định tên thích hợp cho tài liệu bằng cách khai báo hàm head tại bất kỳ thời điểm nào trước khi triển khai:  
+```bash
+def size(map_with_size)
+
+def size(%{size: size}) do
+  size
+end
+```
+
+### Documentation metadata (tài liệu siêu dữ liệu)
+Một số siêu dữ liệu metadata thường dùng là `:since` chú thích phiên bản mà module, function, type, hoặc callback được thêm vào. Một loại khác là `:deprecated` đưa ra cảnh báo trong tài liệu rằng việc sử dụng này không được khuyến khích.  
+
+
+### Recommendations (khuyến nghị)
+Khi viết tài liệu:
+- Giữ d9aon5 văn đầu tiên của tài liệu ngắn gọn và đơn giản, thường là 1 dòng. Các công cụ như `ExDoc` sử dụng dòng đầu tiên để tạo bản tóm tắt.  
+- Tham chiếu các module theo tên đầy đủ của chúng. Markdown sử dụng dấu nháy (\`) để trích dẫn code. Elixir dựa trên nó để tự động tạo liên kết khi tên module hoặc hàm được tham chiếu. Vì lý do này, hãy luôn sử dụng tên đầy đủ. Nếu bạn có 1 module là `MyApp.Hello` thì luôn tham chiếu nó là `MyApp.Hello` chứ đừng bao giờ là `Hello`.  
+- Tham chiếu các hàm theo tên và số lượng arity nếu chúng là hàm cục bộ, như `world/1` hoặc theo module, tên và số lượng arity nếu trỏ đến 1 module bên ngoài: `MyApp.Hello.world/1`.  
+- Tham chiếu `@callback` bằng cách thêm `c:` như: `c:world/1`.  
+- Tham chiếu đến `@type` bằng cách thêm `:t` vào trước, như: `t:value/0`.  
+- Bắt đầu phần mới với tiêu đề Markdown cấp độ hai ##. Tiêu đề cấp độ 1 được dành riêng cho tên Module và hàm.
+- Đặt tài liệu trước mệnh đề đầu tiên của các hàm nhiều mệnh đề. Tài liệu luôn theo từng hàm và số lượng arity chứ không phải theo từng mệnh đề.  
+- Sử dụng khóa `:since` trong siêu dữ liệu metadate tài liệu để chú thích bất cứ khi nào có hàm hoặc module mới được thêm vào API của bạn.  
+
+
+### Doctests (tài liệu kiểm tra)
+
+
 
 
