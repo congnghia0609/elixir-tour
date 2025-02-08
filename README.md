@@ -2766,6 +2766,39 @@ Khi viết tài liệu:
 
 
 ### Doctests (tài liệu kiểm tra)
+Khuyến khích các nhà phát triển nên đưa các ví dụ vào tài liệu, thường nằm trong tiêu đề ## Example. Để đảm bảo các ví dụ không bị lỗi thời, khung thử nghiệm của Elixir (ExUnit) cung cấp 1 tính năng gọi là doctest cho phép các nhà phát triển thử nghiệm các ví dụ trong tài liệu của họ. Doctest hoạt động bằng cách phân tích các mẫu mã bắt đầu bằng `iex>` từ tài liệu.  
+
+
+### Documentation != Code comments (Tài liệu != bình luận mã)
+Tài liệu là hợp đồng với người dùng API của bạn, những người không nhất thiết phải có quyền truy cập vào mã nguồn, trong khi chú thích mã dành cho những người tương tác trực tiếp với mã nguồn. Bạn có thể tìm hiểu và diễn đạt những đảm bảo khác nhau về phần mềm của mình bằng cách tách biệt 2 khái niệm đó.  
+
+
+### Hiding internal modules and functions (ẩn các module và hãm bên trong)
+Elixir cho phép các nhà phát triển ẩn các module và hàm khỏi tài liệu bằng cách đặt `@doc false` để ẩn 1 hàm cụ thể hoặc `@moduledoc false`  để ẩn toàn bộ module.  
+```bash
+defmodule MyApp.Hidden do
+  @moduledoc false
+
+  @doc """
+  This function won't be listed in docs.
+  """
+  def function_that_wont_be_listed_in_docs do
+    # ...
+  end
+end
+```
+Trong trường hợp bạn không muốn ẩn toàn bộ module, bạn có thể ẩn từng hàm riêng lẻ:  
+```bash
+defmodule MyApp.Sample do
+  @doc false
+  def add(a, b), do: a + b
+end
+```
+Lưu ý rằng `@moduledoc false` hoặc `@doc false` không làm cho hàm trở thành riêng tư. Hàm trên vẫn có thể được gọi như: `MyApp.Sample.add(1, 2)`. 
+
+
+### Code.fetch_docs/1
+Elixir lưu trữ tài lie7u5 bên trong các khối được xác định trước trong bytecode. Tài liệu không được tải vào bộ nhớ khi các module được tải, thay vào đó nó có thể được đọc từ từ bytecode trong ổ đĩa bằng hàm `Code.fecth_docs/1`. Nhược điểm là các module được xác định trong bộ nhớ, như các module được xác định trong IEx, không thể truy cập tài liệu của chúng vì chúng không ghi mã bytecode vào ổ đĩa.  
 
 
 
