@@ -2801,5 +2801,77 @@ Lưu ý rằng `@moduledoc false` hoặc `@doc false` không làm cho hàm trở
 Elixir lưu trữ tài lie7u5 bên trong các khối được xác định trước trong bytecode. Tài liệu không được tải vào bộ nhớ khi các module được tải, thay vào đó nó có thể được đọc từ từ bytecode trong ổ đĩa bằng hàm `Code.fecth_docs/1`. Nhược điểm là các module được xác định trong bộ nhớ, như các module được xác định trong IEx, không thể truy cập tài liệu của chúng vì chúng không ghi mã bytecode vào ổ đĩa.  
 
 
+## Optional syntax sheet (bảng cú pháp tùy chọn)
+Elixir cho phép các nhà phát triển bỏ qua các dấu phân cách trong 1 số trường hợp để làm cho mã dễ đọc hơn, ví dụ dấu ngoặc đơn là tùy chọn:  
+```bash
+iex> length([1, 2, 3]) == length [1, 2, 3]
+true
+```
+
+và khối `do-end` tương đương với danh sách từ khóa keyword lists:  
+```bash
+# do-end blocks
+iex> if true do
+...>   :this
+...> else
+...>   :that
+...> end
+:this
+
+# keyword lists
+iex> if true, do: :this, else: :that
+:this
+```
+Danh sách từ khóa sử dụng ký hiệu thông thường của Elixir để phân tách dad1 đối số, trong đó chúng ta phân tách từng cặp key-value bằng dấu phẩy và mỗi khóa được theo sau bởi `:`. Trong khối `do` chúng ta loại bỏ dấu hai chấm, dấu phẩy và phân tách mỗi từ khóa bằng 1 dòng mới. 
+
+
+### Walk-through (hướng dẫn)
+Xem đoạn mã sau:  
+```bash
+if variable? do
+  Call.this()
+else
+  Call.that()
+end
+```
+Bây giờ chúng ta hãy loại bỏ từng quy ước một:  
+1. Khối `do-end` tương đương với từ khóa:  
+```bash
+if variable?, do: Call.this(), else: Call.that()
+```
+2. Danh sách từ khóa là đối số cuối cùng không yêu cầu dấu ngoặc vuông, nhưng chúng ta hãy thêm chúng:  
+```bash
+if variable?, [do: Call.this(), else: Call.that()]
+```
+3. Danh sách từ khóa giống như danh sách các cặp 2 phần tử:  
+```bash
+if variable?, [{:do, Call.this()}, {:else, Call.that()}]
+```
+4. Cuối cùng, dấu ngoặc đơn là tùy chọn khi gọi hàm, nhưng chúng ta hãy thêm chúng vào:  
+```bash
+if(variable?, [{:do, Call.this()}, {:else, Call.that()}])
+```
+Bốn quy tắc này phác thảo cú pháp tùy chọn có trong Elixir.  
+
+Để hiểu tại sao những quy tác này lại quan trọng, chúng ta có thể so sánh ngắn gọn Elixir với các ngôn ngữ lập trình khác. Hầu hết các ngôn ngữ lập trình đều có 1 số từ khóa để định nghĩa phương thức, hàm, điều kiện, vòng lặp, v.v. Mỗi từ khóa đó đều có các quy tắc cú pháp riêng kèm theo.  
+
+Tuy nhiên, trong Elixir, không có tính năng ngôn ngữ nào trong số này yêu cầu "từ khóa" đặc biệt, thay vào đó, tất cả đều được xây dựng từ tập hợp quy tắc nhỏ này. Lợi ích khác là các nhà phát triển cũng có thể mở rộng ngôn ngữ theo cách phù hợp với chính ngôn ngữ đó, vì các cấu trúc để thiết kế và mở rộng ngôn ngữ là giống nhau.  
+
+Cuối cùng, những quy tắc đó cho phép chúng ta viết:  
+```bash
+defmodule Math do
+  def add(a, b) do
+    a + b
+  end
+end
+```
+thay vì:  
+```bash
+defmodule(Math, [
+  {:do, def(add(a, b), [{:do, a + b}])}
+])
+```
+
+Nếu bạn lo lắng về việc áp dụng các quy tắc này thì trình định dạng Elixir sẽ xử lý những lo ngại này. Hầu hết các nhà phát triển Elixir sử dụng tác vụ `mix format` để định dạng cơ sở mã của họ theo 1 bộ quy tắc được nhóm Elixir và cộng đồng xác định rõ ràng. Ví dụ, `mix format` sẽ luôn thêm dấu ngoặc đơn vào lệnh gọi hàm trừ khi được cấu hình rõ ràng là không làm như vậy. Điều này giúp duy trì tính nhất quán trên tất cả các cơ sở mã trong các tổ chức và cộng đồng rộng lớn hơn.  
 
 
