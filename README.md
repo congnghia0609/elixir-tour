@@ -2875,3 +2875,164 @@ defmodule(Math, [
 Nếu bạn lo lắng về việc áp dụng các quy tắc này thì trình định dạng Elixir sẽ xử lý những lo ngại này. Hầu hết các nhà phát triển Elixir sử dụng tác vụ `mix format` để định dạng cơ sở mã của họ theo 1 bộ quy tắc được nhóm Elixir và cộng đồng xác định rõ ràng. Ví dụ, `mix format` sẽ luôn thêm dấu ngoặc đơn vào lệnh gọi hàm trừ khi được cấu hình rõ ràng là không làm như vậy. Điều này giúp duy trì tính nhất quán trên tất cả các cơ sở mã trong các tổ chức và cộng đồng rộng lớn hơn.  
 
 
+## Erlang libraries (Thư viện Erlang)
+Elixir cung cấp khả năng tương tác tuyệt vời với các thư viện Erlang. Trên thực tế, Elixir không khuyến khích việc chỉ đóng gói các thư viện Erlang mà thay vào đó là giao tiếp trực tiếp với mã Erlang.  
+Các module Erlang có quy ước đặt tên khác với Elixir và bắt đầu bằng chữ thường. Trong cả 2 trường hợp, tên module là các atom và chúng ta gọi các hàm bằng cách phân phối đến tên module:  
+```bash
+iex> is_atom(String)
+true
+iex> String.first("hello")
+"h"
+iex> is_atom(:binary)
+true
+iex> :binary.first("hello")
+104
+```
+
+Chúng ta sẽ làm quen với 1 số hàm Erlang phổ biến và hữu ích nhất không có trong Elixir.  
+
+
+### The binary module (module nhị phân)
+Module `String` trong Elixir xử lý binary được mã hóa UTF-8. Module `:binary` hữu ích khi bạn xử lý dữ liệu nhị phân không nhất thiết được mã hóa UTF-8.  
+```bash
+iex> String.to_charlist("Ø")
+[216]
+iex> :binary.bin_to_list("Ø")
+[195, 152]
+```
+Ví dụ trên cho thấy sự khác biệt, module `String` trả về các điểm mã Unicode, trong khi `:binary` xử lý các byte dữ liệu thô.  
+
+
+### Formatted text output (Định dạng văn bản đầu ra)
+Elixir không chứa hàm tương tự như `printf` có trong C và các ngôn ngữ khác. May thay, các hàm thư viện chuẩn Erlang có `:io.format/2` và `:io_lib.format/2` có thể được sử dụng. Định dạng đầu tiên cho đầu ra thiết bị đầu cuối terminal, trong khi định dạng thứ 2 cho `iolist`.  
+```bash
+iex> :io.format("Pi is approximately given by:~10.3f~n", [:math.pi])
+Pi is approximately given by:     3.142
+:ok
+iex> to_string(:io_lib.format("Pi is approximately given by:~10.3f~n", [:math.pi]))
+"Pi is approximately given by:     3.142\n"
+```
+
+### The crypto module (Module mật mã)
+Module `:crypto` chứa các hàm băm, chữ ký số, mã hóa và nhiều tính năng khác:  
+```bash
+iex> Base.encode16(:crypto.hash(:sha256, "Elixir"))
+"3315715A7A3AD57428298676C5AE465DADA38D951BDFAC9348A8A31E9C7401CB"
+```
+Module `:crypto` là 1 phần của ứng dụng `:crypto` đi kèm với Erlang. Điều này có nghĩa là bạn phải liệt kê ứng fung5 `:crypto` như 1 ứng dụng bổ sung trong cấu hình dự án của bạn. Để thực hiện việc này, hãy chỉnh sửa file `mix.exs` của bạn như sau:  
+```bash
+def application do
+  [extra_applications: [:crypto]]
+end
+```
+Bất kỳ module nào không phải là 1 phần của ứng dụng Erlang `:kernel` hoặc `:stdlib` đều phải có ứng dụng được liệt kê rõ ràng trong `mix.exs` của bạn. Bạn có thể tìm thấy tên ứng dụng của bất kỳ module Erlang nào trong tài liệu Erlang.  
+
+
+### The digraph module (module digraph)
+Các module `:digraph` và `:digraph_utils` chứa các hàm để xử lý đồ thị có hướng được xây dựng từ các đỉnh và cạnh. Sau khi xây dựng đồ thị, các thuật toán trong đó sẽ giúp tìm ra đường đi ngắn nhất giữa 2 đỉnh hoặc các chu trình trong đồ thị.  
+
+Cho 3 đỉnh, hãy tìm đường đi ngắn nhất từ đỉnh đầu tiên đến đỉnh cuối cùng.
+```bash
+iex> digraph = :digraph.new()
+iex> coords = [{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}]
+iex> [v0, v1, v2] = (for c <- coords, do: :digraph.add_vertex(digraph, c))
+iex> :digraph.add_edge(digraph, v0, v1)
+iex> :digraph.add_edge(digraph, v1, v2)
+iex> :digraph.get_short_path(digraph, v0, v2)
+[{0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}]
+```
+Chú ý rằng các hàm trong `:digraph` thay đổi cấu trúc đồ thị tại chỗ, điều này có thể thực hiện được vì chúng được triển khai dưới dạng bảng ETS, sẽ được giải thích ở phần sau.  
+
+
+### Erlang Term Storage (Lưu trữ thuật ngữ Erlang)
+Các module `:ets` và `:dets` xử lý việc lưu trữ các cấu trúc dữ liệu lớn trong bộ nhớ hoặc trên ổ đĩa.  
+
+ETS cho phép bạn tạo 1 bảng chứa các tuple. Theo mặc định, các bảng ETS được bảo vệ, nghĩa là chỉ có tiến trình sở hữu mới có thể ghi vào bảng nhưng bất kỳ tiến trình nào khác đều có thể đọc. ETS có 1 số chức năng cho phép sử dụng bảng như 1 cơ sở dữ liệu đơn giản, kho lưu trữ key-value hoặc như 1 cơ chế bộ nhớ đệm.  
+
+Các hàm trong module `ets` sẽ sửa đổi trạng thái của bảng như 1 tác dụng phụ.  
+```bash
+iex> table = :ets.new(:ets_test, [])
+# Store as tuples with {name, population}
+iex> :ets.insert(table, {"China", 1_374_000_000})
+iex> :ets.insert(table, {"India", 1_284_000_000})
+iex> :ets.insert(table, {"USA", 322_000_000})
+iex> :ets.i(table)
+<1   > {<<"India">>,1284000000}
+<2   > {<<"USA">>,322000000}
+<3   > {<<"China">>,1374000000}
+```
+
+
+### The math module (module toán học)
+Module `:math` chứa các phép toán phổ biến bao gồm các hàm lượng giác, hàm mũ và hàm logarit.  
+```bash
+iex> angle_45_deg = :math.pi() * 45.0 / 180.0
+iex> :math.sin(angle_45_deg)
+0.7071067811865475
+iex> :math.exp(55.0)
+7.694785265142018e23
+iex> :math.log(7.694785265142018e23)
+55.0
+```
+
+
+### The queue module (module hàng đợi)
+Module `:queue` cung cấp 1 cấu trúc dữ liệu thực hiện hàng đợi FIFO (vào trước ra trước) hai đầu 1 cách hiệu quả:  
+```bash
+iex> q = :queue.new
+iex> q = :queue.in("A", q)
+iex> q = :queue.in("B", q)
+iex> {value, q} = :queue.out(q)
+iex> value
+{:value, "A"}
+iex> {value, q} = :queue.out(q)
+iex> value
+{:value, "B"}
+iex> {value, q} = :queue.out(q)
+iex> value
+:empty
+```
+
+
+### The rand module
+`:rand` có các hàm trả về giá trị ngẫu nhiên và thiết lập hạt giống ngẫu nhiên.  
+```bash
+iex> :rand.uniform()
+0.8175669086010815
+iex> _ = :rand.seed(:exs1024, {123, 123534, 345345})
+iex> :rand.uniform()
+0.5820506340260994
+iex> :rand.uniform(6)
+6
+```
+
+
+### The zip and zlib modules
+Module `:zip` cho phép bạn đọc và ghi các file ZIP vào và ra khỏi ổ đĩa hoặc bộ nhớ, cũng như trích xuất thông tin file. mã này đếm số lượng file trong file ZIP.  
+```bash
+iex> :zip.foldl(fn _, _, _, acc -> acc + 1 end, 0, :binary.bin_to_list("file.zip"))
+{:ok, 633}
+```
+
+Module `:zlib` xử lý việc nén dữ liệu theo định dạng zlib, như được tìm thấy trong tiện ích dòng lệnh gzip trong hệ thống Unix.  
+```bash
+iex> song = "
+...> Mary had a little lamb,
+...> His fleece was white as snow,
+...> And everywhere that Mary went,
+...> The lamb was sure to go."
+iex> compressed = :zlib.compress(song)
+iex> byte_size(song)
+110
+iex> byte_size(compressed)
+99
+iex> :zlib.uncompress(compressed)
+"\nMary had a little lamb,\nHis fleece was white as snow,\nAnd everywhere that Mary went,\nThe lamb was sure to go."
+```
+
+
+## Debugging (gỡ lỗi)
+
+
+
+
