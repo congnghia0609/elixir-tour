@@ -3032,6 +3032,110 @@ iex> :zlib.uncompress(compressed)
 
 
 ## Debugging (gỡ lỗi)
+Có 1 số cách phổ biến để gỡ lỗi trong Elixir.  
+
+### IO.inspect/2
+Điều khiến `IO.inspect(item, otps \\[])` thực sự hữu ích trong việc gỡ lỗi là nó trả về đối số `item` được truyền vào mà không ảnh hưởng đến hành vi của mã gốc. Ví dụ:  
+```bash
+(1..10)
+|> IO.inspect()
+|> Enum.map(fn x -> x * 2 end)
+|> IO.inspect()
+|> Enum.sum()
+|> IO.inspect()
+```
+In ra:  
+```bash
+1..10
+[2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+110
+```
+Như bạn thấy, `IO.inspect/2` cho phép "theo dõi spy" các giá trị ở hầu hết mọi nơi trong mã của bạn mà không làm thay đổi kết quả, khiến nó trở nên rất hữu ích trong 1 đường ống như trong trường hợp trên.  
+
+`IO.inspect/2` cũng cung cấp khả năng trang trí đầu ra bằng tùy chọn nhãn `label`. Nhãn sẽ được in trước mục được kiểm tra:  
+```bash
+[1, 2, 3]
+|> IO.inspect(label: "before")
+|> Enum.map(&(&1 * 2))
+|> IO.inspect(label: "after")
+|> Enum.sum
+```
+In ra:  
+```bash
+before: [1, 2, 3]
+after: [2, 4, 6]
+```
+
+Ngoài ra, `IO.inspect/2` với `binding/0` cũng rất phổ biến, hàm này trả về tất cả tên biến và giá trị của chúng:  
+```bash
+def some_fun(a, b, c) do
+  IO.inspect(binding())
+  ...
+end
+```
+Khi `some_fun/3` được gọi với `:foo`, `:bar`, `:baz` nó sẽ in ra:  
+```bash
+[a: :foo, b: "bar", c: :baz]
+```
+Xem [IO.inspect/2](https://hexdocs.pm/elixir/IO.html#inspect/2) và [Inspect.Opts](https://hexdocs.pm/elixir/Inspect.Opts.html) để tìm hiểu thêm về chức năng này và đọc về tất cả các tùy chọn được hỗ trợ.  
+
+
+### dbg/2
+Elixir v1.14 giới thiệu `dbg/2`. `dbg` tương tự như `IO.inspect/2` nhưng được thiết kế riêng cho việc gỡ lỗi. Nó in giá trị được truyền vào và trả về (giống như `IO.inspect/2`) nhưng nó cũng in mã và vị trí.  
+```bash
+# In my_file.exs
+feature = %{name: :dbg, inspiration: "Rust"}
+dbg(feature)
+dbg(Map.put(feature, :in_version, "1.14.0"))
+```
+Đoạn mã trên in ra nội dung sau:  
+```bash
+[my_file.exs:2: (file)]
+feature #=> %{inspiration: "Rust", name: :dbg}
+[my_file.exs:3: (file)]
+Map.put(feature, :in_version, "1.14.0") #=> %{in_version: "1.14.0", inspiration: "Rust", name: :dbg}
+
+```
+Khi nói về `IO.inspect/2` chúng ta đã đề cập đến tính hữu ích của nó khi được đặt giữa các bước của |> pipeline. `dbg` làm tốt hơn: nó hiểu mã Elixir, do đó nó sẽ in ra giá trị ở mọi bước của pipeline.  
+```bash
+[dbg_pipes.exs:5: (file)]
+__ENV__.file #=> "/home/myuser/dbg_pipes.exs"
+|> String.split("/", trim: true) #=> ["home", "myuser", "dbg_pipes.exs"]
+|> List.last() #=> "dbg_pipes.exs"
+|> File.exists?() #=> true
+```
+Trong khi `dbg` cung cấp các tiện ích xung quanh cấu trúc Elixir, bạn sẽ cần `IEx` nếu muốn thực thi mã và đặt điểm dừng trong khi gỡ lỗi.  
+
+
+### Pry (tò mò)
+Khi sử dụng `IEx`, bạn có thể truyền `--dbg pry` làm tùy chọn để "dừng" việc thực thi mã tại nơi có lệnh gọi dbg:  
+```bash
+iex --dbg pry
+```
+Hoặc để gỡ lỗi bên trong 1 dự án:  
+```bash
+iex --dbg pry -S mix
+```
+
+Bây giờ bất kỳ lệnh gọi nào đến `dbg` sẽ hỏi bạn có muốn pry mã hiện tại hay không. Nếu bạn chấp nhận, bạn sẽ có thể truy cập tất cả các biến, cũng như các mục nhập và bí danh từ code, trực tiếp từ IEx. Điều này được gọi là "prying". Trong khi phiên spy đang chạy, việc thực thi mã dừng lại, cho đến khi `continue` (hoặc `c`) hoặc `next` (hoặc `n`) được gọi. Hãy nhớ rằng bạn luôn có thể chạy `iex` trong ngữ cảnh của 1 dự án với `iex -S mix TASK`.  
+
+
+### Breakpoints (điểm ngắt)
+Các lệnh gọi `dbg` yêu cầu chúng ta phải thay đổi mã mà chúng ta muốn gỡ lỗi và chức năng từng bước hạn chế. May thay, IEx cũng cung cấp hàm `IEx.break!/2` cho phép bạn thiết lập và quản lý điểm dừng trên bất kỳ mã Elixir nào mà không cần sửa đổi mã nguồn của nó:  
+
+Tương tự như `dbg` khi đạt đến điểm dừng quá trình thực thi mã sẽ dừng lại cho đến khi `continue` (hoặc `c`) hoặc `next` (hoặc `n`) được gọi. Theo mặc định, điểm dừng có thể điều hướng từng dòng, tuy nhiên, chúng không có quyền truy cập vào các bí danh và import khi điểm dừng được đặt trên các module đã biên dịch.  
+
+Nhiệm vụ `mix test` tích hợp trực tiếp với các điểm dừng thông qua cờ `-b / --breakpoints`. Khi cờ được sử dụng, 1 điểm dừng được đặt ở đầu mỗi bài kiểm tra sẽ chạy:  
+
+Sau đây là 1 số lệnh bạn có thể sử dụng trong thực tế:  
+```bash
+# Debug all failed tests
+iex -S mix test --breakpoints --failed
+# Debug the test at the given file:line
+iex -S mix test -b path/to/file:line
+
+```
+
 
 
 
