@@ -3137,6 +3137,27 @@ iex -S mix test -b path/to/file:line
 ```
 
 
+### Observer (người quan sát)
+Để gỡ lỗi các hệ thống phức tạp, việc nhảy vào mã là không đủ. Cần phải hiểu toàn bộ máy ảo, tiến trình, ứng dụng cũng như thiết lập cơ chế theo dõi. May thay, điều này có thể thực hiện được trong Erlang với `:observer`. Trong ứng dụng của bạn:  
+```bash
+$ iex
+:observer.start()
+```
+Phần trên sẽ mở ra 1 giao diện người dùng đồ họa khác cung cấp nhiều khung để hiểu và điều hướng đầy đủ theo thời gian chạy và dự án của bạn.  
+
+Nếu bạn sử dụng nền tảng web Phoenix, nó sẽ đi kèm với Phoenix LiveDashboard, 1 bảng điều khiển web dành cho ác node sản xuất production cung cấp các tính năng tương tự như Observer.  
+
+Cuối cùng, bạn có thể có được cái nhìn tồng quan về thông tin thời gian chạy bằng cách gọi trực tiếp `runtime_info/0` trong IEx.  
+
+
+###  Other tools and community (Các công cụ và cộng đồng khác)
+Chúng ta mới chỉ khám phá sơ qua những gì Erlang VM có thể cung cấp, ví dụ:  
+- Cùng với quan sát ứng dụng, Erlang cũng bao gồm `:crashdump_viewer` để xem bản dump sự cố.  
+- Tích hợp với các trình theo dõi cấp hệ điểu hành, chẳng hạn như [Linux Trace Toolkit](https://www.erlang.org/doc/apps/runtime_tools/lttng), [DTRACE](https://www.erlang.org/doc/apps/runtime_tools/dtrace) và [SystemTap](https://www.erlang.org/doc/apps/runtime_tools/systemtap)  
+- [Microstate accounting](http://www.erlang.org/doc/man/msacc.html) đo lường thời gian chạy cho 1 số tác vụ cấp thấp trong 1 khoảng thời gian ngắn.  
+- Mix ships với nhiều tác vụ trong namespace `profile`, chẳng hạn như `mix profile.cprof` và `mix profile.fprof`.  
+- Đối với các trường hợp sử dụng nâng cao hơn, bạn nên đọc sách [Erlang in Anger](https://www.erlang-in-anger.com/) rất tuyệt với, có sẵn dưới dạng sách điện tử miễn phí.  
+
 
 
 
