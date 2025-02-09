@@ -3,7 +3,7 @@ elixir-tour is a cheat sheet, quick reference to learn elixir programming
 
 # Install Elixir
 Ref: [https://elixir-lang.org/install.html](https://elixir-lang.org/install.html)
-```elixir
+```bash
 # Ngay 24/01/2025 on Ubuntu 22.04
 # https://apollin.com/how-to-install-elixir-on-ubuntu-22-using-asdf/
 # https://elixir-lang.org/install.html
@@ -107,13 +107,13 @@ Erlang/OTP 27 [erts-15.2.1] [source] [64-bit] [smp:16:16]
 
 Elixir 1.18.2 (compiled with Erlang/OTP 27)
 ------------------------------------------------------------
-
-
 ```
+
+
 
 # Install Phoenix
 Ref: [https://hexdocs.pm/phoenix/installation.html](https://hexdocs.pm/phoenix/installation.html)
-```elixir
+```bash 
 # https://hexdocs.pm/phoenix/installation.html
 # Install the Phoenix application generator:
 mix archive.install hex phx_new
@@ -174,6 +174,7 @@ iex -S mix phx.server
 # we should see the Phoenix Framework welcome page.
 ==> To stop it, we hit ctrl-c twice.
 ```
+
 
 # Editor Tool
 - VSCode + plugin ElixirLS  
@@ -3156,7 +3157,7 @@ Chúng ta mới chỉ khám phá sơ qua những gì Erlang VM có thể cung c�
 - Tích hợp với các trình theo dõi cấp hệ điểu hành, chẳng hạn như [Linux Trace Toolkit](https://www.erlang.org/doc/apps/runtime_tools/lttng), [DTRACE](https://www.erlang.org/doc/apps/runtime_tools/dtrace) và [SystemTap](https://www.erlang.org/doc/apps/runtime_tools/systemtap)  
 - [Microstate accounting](http://www.erlang.org/doc/man/msacc.html) đo lường thời gian chạy cho 1 số tác vụ cấp thấp trong 1 khoảng thời gian ngắn.  
 - Mix ships với nhiều tác vụ trong namespace `profile`, chẳng hạn như `mix profile.cprof` và `mix profile.fprof`.  
-- Đối với các trường hợp sử dụng nâng cao hơn, bạn nên đọc sách [Erlang in Anger](https://www.erlang-in-anger.com/) rất tuyệt với, có sẵn dưới dạng sách điện tử miễn phí.  
+- Đối với các trường hợp sử dụng nâng cao hơn, bạn nên đọc sách [Erlang in Anger](https://www.erlang-in-anger.com/) rất tuyệt vời, có sẵn dưới dạng sách điện tử miễn phí.  
 
 
 
