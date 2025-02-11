@@ -3249,9 +3249,9 @@ mix help compile
 
 ## Simple state management with agents (Quản lý trạng thái đơn giản với các tác nhân agent)
 
-- Agent là các wrapper đơn giản xung quanh trạng thái.
-- GenServer "Genericservers" (tiến trình processes) đóng gói trạng thái, cung cấp cá lệnh gọi đồng bộ và bất đồng bộ, hỗ trợ tải lại mã, v.v.
-- Task các đơn vị tính toán bất đồng bộ cho phép tạo ra 1 tiến trình và có khả năng truy xuất kết quả của quy trình đó sau này.
+- `Agent` là các wrapper đơn giản xung quanh trạng thái.
+- `GenServer` "Genericservers" (tiến trình processes) đóng gói trạng thái, cung cấp cá lệnh gọi đồng bộ và bất đồng bộ, hỗ trợ tải lại mã, v.v.
+- `Task` các đơn vị tính toán bất đồng bộ cho phép tạo ra 1 tiến trình và có khả năng truy xuất kết quả của quy trình đó sau này.
 
 
 
