@@ -32,26 +32,45 @@ defmodule KV.Registry do
 
   @impl true
   def init(:ok) do
-    {:ok, %{}} # {:ok, state} state là map.
+    names = %{} # name -> pid
+    refs = %{} # ref -> name
+    {:ok, {names, refs}} # {:ok, state} state là 2 map.
   end
 
   ## Đây là hàm đồng bộ synchronous (hậu tố _call),
   ## client phải chờ server phản hồi response.
   @impl true
-  def handle_call({:lookup, name}, _from, names) do
-    {:reply, Map.fetch(names, name), names} # format {:reply, reply, new_state}
+  def handle_call({:lookup, name}, _from, state) do
+    {names, _} = state
+    {:reply, Map.fetch(names, name), state} # format {:reply, reply, new_state}
   end
 
   ## Đây là hàm bất đồng bộ asynchronous (hậu tố _cast).
   ## Server không gửi response nên client không phải đợi.
   @impl true
-  def handle_cast({:create, name}, names) do
+  def handle_cast({:create, name}, {names, refs}) do
     if Map.has_key?(names, name) do
-      {:noreply, names} # format {:noreply, new_state}
+      {:noreply, {names, refs}} # format {:noreply, new_state}
     else
       {:ok, bucket} = KV.Bucket.start_link([])
-      {:noreply, Map.put(names, name, bucket)} # format {:noreply, new_state}
+      ref = Process.monitor(bucket)
+      refs = Map.put(refs, ref, name)
+      names = Map.put(names, name, bucket)
+      {:noreply, {names, refs}} # format {:noreply, new_state}
     end
   end
 
+  @impl true
+  def handle_info({:DOWN, ref, :process, _pid, _reason}, {names, refs}) do
+    {name, refs} = Map.pop(refs, ref)
+    names = Map.delete(names, name)
+    {:noreply, {names, refs}}
+  end
+
+  @impl true
+  def handle_info(msg, state) do
+    require Logger
+    Logger.debug("Unexpected message in KV.Registry: #{inspect(msg)}")
+    {:noreply, state}
+  end
 end
