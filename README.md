@@ -3169,7 +3169,82 @@ Chúng ta mới chỉ khám phá sơ qua những gì Erlang VM có thể cung c�
 mix new kv --module KV
 ```
 
+Để biên dịch dự án:  
+```elixir
+cd kv
+mix compile
+```
 
+Chạy dự án với tương tác bằng shel:  
+```elixir
+iex -S mix
+```
+
+Bạn có thể biên dịch lại mã nguồn bất cứ khi nào có sự thay đổi code với iex bằng lệnh `recomple`:  
+```elixir
+iex(1)> recompile()
+Compiling 1 file (.ex)
+:ok
+iex(2)> recompile()
+:noop
+```
+
+## Running tests
+Một số thứ cần lưu ý với test:  
+- 1. File test là tập lệnh Elixir (.exs) điều này rất tiện lợi vì chúng ta không cần phải biên dịch các file test trước khi chạy chúng.
+- 2. Chúng ta định nghĩa 1 nodule test tên `KVTest` trong đó chúng ta sử dụng `ExUnit.Case` để đưa API thử nghiệm vào.  
+- 3. Chúng ta sử dụng 1 trong các macro `ExUnit.DocTest.doctest/1` để chỉ ra rằng module KV chứa doctest.
+- 4. Chúng ta sử dụng macro `ExUnit.test/2` để xác định 1 bài kiểm đơn giản.
+
+Mix cũng tạo ra 1 file có tên `test/test_helper.exs` có nhiệm vụ thiết lập khung thử nghiệm: `ExUnit.start()`. File này sẽ d8uo7c5 Mix yêu cầu mỗi lần trước khi chúng ta chạy thử nghiệm.  
+
+Chúng ta có thể chạy test với lệnh:  
+```elixir
+$ mix test
+Compiling 1 file (.ex)
+Generated kv app
+Running ExUnit with seed: 229451, max_cases: 32
+
+..
+Finished in 0.01 seconds (0.00s async, 0.01s sync)
+1 doctest, 1 test, 0 failures
+```
+
+Chúng ta có thể chạy 1 thử ngiệm duy nhất bằng:  
+```elixir
+mix test test/kv_test.exs:5
+```
+
+
+## Automatic code formatting (Định dạng mã tự động)
+1 File được tạo ra bởi `mix new` là `.formatter.exs`. Elixir đi kèm với 1 trình định dạng mã có khã năng tự động định dạng cơ sở mã theo 1 phong cách nhất quán.  
+Để định dạng mã code ta chạy lệnh: `mix format`  
+
+
+## Environments (Môi trường)
+Mix cung cấp khái niệm môi trường. Chúng cho phép nhà phát triển tùy chỉnh biên dịch và các tùy chọn khác cho các tình huống cụ thể. Theo mặc định, Mix hiểu 3 môi trường:  
+- `:dev` nơi mà các tác vụ Mix (như biên dịch) chạy theo mặc định.
+- `:test` được sử dụng bởi `mix test`
+- `:prod` cái bạn sẽ sử dụng để chạy dự án của mình trong quá trình sản xuất.
+
+Mix mặc định là môi trường `:dev`, ngoại trừ tác vụ `test` sẽ mặc định là môi trường `:test`. Môi trường có thể thay đổi thông qua biến môi trường `MIX_ENV`:  
+```bash
+MIX_ENV = prod mix compile
+```
+Trên Windows:  
+```bash
+set "MIX_ENV=prod" && mix compile
+```
+
+Mix là 1 công cụ xây dựng build và do đó, nó không được mong đợi sẽ có sẵn trong production. Do đó, bạn chỉ nên truy cập `Mix.env/0` trong các file cấu hình configuration và bên trong `mix.exs`, không bao giờ truy cập trong mã của ứng dụng (lib).  
+
+
+## Exploring (khám phá)
+Bạn luôn có thể gọi tác vụ trợ giúp để liệt kê tất cả các tác vụ khả dụng:  
+```bash
+mix help
+mix help compile
+```
 
 
 
