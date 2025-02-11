@@ -3161,4 +3161,15 @@ Chúng ta mới chỉ khám phá sơ qua những gì Erlang VM có thể cung c�
 
 
 
+# Introduction to Mix
+
+## Our first project
+Để tạo project đầu tiên tên `kv` với module tên `KV` ta dùng lệnh:  
+```elixir
+mix new kv --module KV
+```
+
+
+
+
 
