@@ -13,6 +13,11 @@ Ref: [https://elixir-lang.org/install.html](https://elixir-lang.org/install.html
 ## https://asdf-vm.com/
 ## https://asdf-vm.com/guide/getting-started.html
 
+# Before asdf install
+https://github.com/asdf-vm/asdf-erlang#before-asdf-install
+
+
+
 # Download asdf
 git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.15.0
 

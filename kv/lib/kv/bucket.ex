@@ -1,6 +1,9 @@
 
 defmodule KV.Bucket do
-  use Agent
+  ## `restart: :temporary` để tránh bị rò rỉ bộ nhớ khi Bucket bị chết,
+  ## thì supervisor chỉ cần thay thế bằng cái mới, mà
+  ## không cần phải khởi động lại cái cũ.
+  use Agent, restart: :temporary
 
   @doc """
   Starts a new bucket.
