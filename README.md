@@ -3288,4 +3288,42 @@ Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các 
 - `:private` Read/Write chỉ giới hạn cho tiến trình sở hữu.
 
 
+## Umbrella projects
+Umbrella projects được sử dụng để xây dựng các ứng dụng chạy chùng nhau trong 1 kho lưu trữ repository duy nhất.  
+
+Để tạo Umbrella projects ta dùng lệnh:
+```bash
+mix new kv_umbrella --umbrella
+
+* creating README.md
+* creating .formatter.exs
+* creating .gitignore
+* creating mix.exs
+* creating apps
+* creating config
+* creating config/config.exs
+
+Your umbrella project was created successfully.
+Inside your project, you will find an apps/ directory
+where you can create and host many apps:
+
+    cd kv_umbrella
+    cd apps
+    mix new my_app
+
+Commands like "mix compile" and "mix test" when executed
+in the umbrella project root will automatically run
+for each application in the apps/ directory.
+```
+
+`kv_umbrella` sẽ quản lý các ứng dụng chạy bên trong theo cấu trúc thư mục:  
+```bash
++ kv_umbrella
+  + apps
+    + kv
+    + kv_server
+```
+
+
+
 
