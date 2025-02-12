@@ -16,6 +16,12 @@ Ref: [https://elixir-lang.org/install.html](https://elixir-lang.org/install.html
 # Before asdf install
 https://github.com/asdf-vm/asdf-erlang#before-asdf-install
 
+## Ubuntu 22.04
+sudo apt-get -y install build-essential autoconf m4 libncurses5-dev libwxgtk3.0-gtk3-dev libwxgtk-webview3.0-gtk3-dev libgl1-mesa-dev libglu1-mesa-dev libpng-dev libssh-dev unixodbc-dev xsltproc fop libxml2-utils libncurses-dev openjdk-11-jdk
+
+### check wxe_driver
+wx-config --version
+3.0.5
 
 
 # Download asdf
@@ -3260,5 +3266,16 @@ mix help compile
 
 
 
+## Observer
+Để chạy được Tool Observer đi kèm với Erlang hỗ trợ GUI hiển thị trực quan các thông số của hệ thống máy ảo Erlang cùng với cây giám sát supervision tree, ta chạy lệnh sau:  
+```bash
+iex -S mix
+
+iex> Mix.ensure_application!(:wx)
+iex> Mix.ensure_application!(:runtime_tools)
+iex> Mix.ensure_application!(:observer)
+iex> :observer.start()
+```
+Nếu trong file `mix.exs` đã có cấu hình `extra_applications: [:logger, :runtime_tools, :wx, :observer],` thì không cần chạy các lệnh `Mix.ensure_application!/1` chỉ cần chạy `:observer.start()` là được.  
 
 
