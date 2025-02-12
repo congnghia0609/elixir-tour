@@ -6,8 +6,8 @@ defmodule KV.Registry do
   @doc """
   Start the registry.
   """
-  def start_link(otps) do
-    GenServer.start_link(__MODULE__, :ok, otps)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, :ok, opts)
   end
 
   @doc """
@@ -33,8 +33,11 @@ defmodule KV.Registry do
   @impl true
   def init(:ok) do
     names = %{} # name -> pid
+    ## Dùng để monitoring Agent để lắng nghe sự kiện :DOWN
+    ## khi Agent bị chết
+    ## {:DOWN, #Reference<0.0.0.551>, :process, #PID<0.66.0>, :normal}
     refs = %{} # ref -> name
-    {:ok, {names, refs}} # {:ok, state} state là 2 map.
+    {:ok, {names, refs}} # {:ok, state} state là 1 tuple chứa 2 map.
   end
 
   ## Đây là hàm đồng bộ synchronous (hậu tố _call),
@@ -47,6 +50,7 @@ defmodule KV.Registry do
 
   ## Đây là hàm bất đồng bộ asynchronous (hậu tố _cast).
   ## Server không gửi response nên client không phải đợi.
+  ## Dùng khi Client không quan tâm đến phản hồi.
   @impl true
   def handle_cast({:create, name}, {names, refs}) do
     if Map.has_key?(names, name) do
@@ -67,6 +71,7 @@ defmodule KV.Registry do
     {:noreply, {names, refs}}
   end
 
+  ## Hàm này xử lý tất cả các message được gửi thông qua cơ chế `send/2`.
   @impl true
   def handle_info(msg, state) do
     require Logger
