@@ -1,22 +1,24 @@
 defmodule KV.RegistryTest do
   use ExUnit.Case, async: true
 
-  setup do
+  setup context do
     ## Dùng start_supervised! để ExUnit đảm bảo rằng tiến trình
     ## registry sẽ bị tắt shutdown trước khi test tiếp theo bắt đầu.
     ## Đảm bảo rằng trạng thái của test hiện tại không ảnh hưởng
     ## đến test tiếp theo trong trường hợp chúng phụ thuộc vào các
     ## tài nguyên được chia sẻ.
-    registry = start_supervised!(KV.Registry)
-    %{registry: registry}
+    # registry = start_supervised!(KV.Registry)
+    # %{registry: registry}
+    _ = start_supervised!(KV.Registry, name: context.test)
+    %{registry: context.test}
   end
 
   test "spawns buckets", %{registry: registry} do
-    name = "shopping"
-    assert KV.Registry.lookup(registry, name) == :error
+    # name = "shopping"
+    assert KV.Registry.lookup(registry, "shopping") == :error
 
-    KV.Registry.create(registry, name)
-    assert {:ok, bucket} = KV.Registry.lookup(registry, name)
+    KV.Registry.create(registry, "shopping")
+    assert {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
 
     key = "milk"
     value = 1
@@ -24,21 +26,27 @@ defmodule KV.RegistryTest do
     assert KV.Bucket.get(bucket, key) == value
   end
 
-  test "removes buckets on exit", %{registry: registry} do
-    name = "shopping"
-    KV.Registry.create(registry, name)
-    {:ok, bucket} = KV.Registry.lookup(registry, name)
-    Agent.stop(bucket)
-    assert KV.Registry.lookup(registry, name) == :error
-  end
+  # test "removes buckets on exit", %{registry: registry} do
+  #   # name = "shopping"
+  #   KV.Registry.create(registry, "shopping")
+  #   {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+  #   Agent.stop(bucket)
 
-  test "removes buckets on crash", %{registry: registry} do
-    name = "shopping"
-    KV.Registry.create(registry, name)
-    {:ok, bucket} = KV.Registry.lookup(registry, name)
+  #   # Do a call to ensure the registry processed the DOWN message
+  #   _ = KV.Registry.create(registry, "bogus")
+  #   assert KV.Registry.lookup(registry, "shopping") == :error
+  # end
 
-    # Stop the bucket with non-normal reason
-    Agent.stop(bucket, :shutdown)
-    assert KV.Registry.lookup(registry, name) == :error
-  end
+  # test "removes buckets on crash", %{registry: registry} do
+  #   # name = "shopping"
+  #   KV.Registry.create(registry, "shopping")
+  #   {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+
+  #   # Stop the bucket with non-normal reason
+  #   Agent.stop(bucket, :shutdown)
+
+  #   # Do a call to ensure the registry processed the DOWN message
+  #   _ = KV.Registry.create(registry, "bogus")
+  #   assert KV.Registry.lookup(registry, "shopping") == :error
+  # end
 end

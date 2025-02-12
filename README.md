@@ -3279,3 +3279,13 @@ iex> :observer.start()
 Nếu trong file `mix.exs` đã có cấu hình `extra_applications: [:logger, :runtime_tools, :wx, :observer],` thì không cần chạy các lệnh `Mix.ensure_application!/1` chỉ cần chạy `:observer.start()` là được.  
 
 
+## ETS (Erlang Term Storage)
+ETS cho phép chúng ta lưu trữ bất kỳ khái niệm Elixir nào vào 1 bảng table trong bộ nhớ, được thực hiện qua module `:ets` của Erlang.  
+
+Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các tùy chọn. 2 Tùy chọn cần thiết là loại bảng và quy tắc truy cập bảng. Trong đó, quy tắc truy cập bảng bao gồm:  
+- `:public` Read/Write cho tất cả các tiến trình.
+- `:protected` Read cho tất cả tiến trình, chỉ được Write bởi tiến trình sở hữu. Đây là tùy chọn mặc định.
+- `:private` Read/Write chỉ giới hạn cho tiến trình sở hữu.
+
+
+
