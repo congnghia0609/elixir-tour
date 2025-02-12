@@ -3324,6 +3324,30 @@ for each application in the apps/ directory.
     + kv_server
 ```
 
+Để tạo app mới `kv_server` trong `kv_umbrella/apps` ta chạy lệnh sau:  
+```bash
+cd kv_umbrella/apps
+mix new kv_server --module KVServer --sup
+# cờ flag `--sup` là nhờ Mix tạo một cây giám sát supervision tree tự động chu chúng ta, thay vì phải tự làm bằng tay.
+* creating README.md
+* creating .formatter.exs
+* creating .gitignore
+* creating mix.exs
+* creating lib
+* creating lib/kv_server.ex
+* creating lib/kv_server/application.ex
+* creating test
+* creating test/test_helper.exs
+* creating test/kv_server_test.exs
+
+Your Mix project was created successfully.
+You can use "mix" to compile it, test it, and more:
+
+    cd kv_server
+    mix test
+
+Run "mix help" for more commands.
+```
 
 
 
