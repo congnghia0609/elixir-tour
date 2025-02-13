@@ -70,7 +70,6 @@ defmodule KV.Registry do
       {:ok, pid} ->
         {:reply, pid, {names, refs}} # format {:reply, reply, new_state}
       :error ->
-        IO.puts("In handle_call error")
         {:ok, pid} = DynamicSupervisor.start_child(KV.BucketSupervisor, KV.Bucket)
         ref = Process.monitor(pid)
         refs = Map.put(refs, ref, name)

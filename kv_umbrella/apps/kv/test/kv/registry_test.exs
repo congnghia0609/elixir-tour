@@ -9,7 +9,7 @@ defmodule KV.RegistryTest do
     ## tài nguyên được chia sẻ.
     # registry = start_supervised!(KV.Registry)
     # %{registry: registry}
-    _ = start_supervised!(KV.Registry, name: context.test)
+    _ = start_supervised!({KV.Registry, name: context.test})
     %{registry: context.test}
   end
 
@@ -26,27 +26,36 @@ defmodule KV.RegistryTest do
     assert KV.Bucket.get(bucket, key) == value
   end
 
-  # test "removes buckets on exit", %{registry: registry} do
-  #   # name = "shopping"
-  #   KV.Registry.create(registry, "shopping")
-  #   {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
-  #   Agent.stop(bucket)
+  test "removes buckets on exit", %{registry: registry} do
+    # name = "shopping"
+    KV.Registry.create(registry, "shopping")
+    {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+    Agent.stop(bucket)
 
-  #   # Do a call to ensure the registry processed the DOWN message
-  #   _ = KV.Registry.create(registry, "bogus")
-  #   assert KV.Registry.lookup(registry, "shopping") == :error
-  # end
+    # Do a call to ensure the registry processed the DOWN message
+    _ = KV.Registry.create(registry, "bogus")
+    assert KV.Registry.lookup(registry, "shopping") == :error
+  end
 
-  # test "removes buckets on crash", %{registry: registry} do
-  #   # name = "shopping"
-  #   KV.Registry.create(registry, "shopping")
-  #   {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+  test "removes buckets on crash", %{registry: registry} do
+    # name = "shopping"
+    KV.Registry.create(registry, "shopping")
+    {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
 
-  #   # Stop the bucket with non-normal reason
-  #   Agent.stop(bucket, :shutdown)
+    # Stop the bucket with non-normal reason
+    Agent.stop(bucket, :shutdown)
 
-  #   # Do a call to ensure the registry processed the DOWN message
-  #   _ = KV.Registry.create(registry, "bogus")
-  #   assert KV.Registry.lookup(registry, "shopping") == :error
-  # end
+    # Do a call to ensure the registry processed the DOWN message
+    _ = KV.Registry.create(registry, "bogus")
+    assert KV.Registry.lookup(registry, "shopping") == :error
+  end
+
+  test "bucket can crash at any time", %{registry: registry} do
+    KV.Registry.create(registry, "shopping")
+    {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+
+    Agent.stop(bucket, :shutdown)
+
+    catch_exit(KV.Bucket.put(bucket, "milk", 3))
+  end
 end

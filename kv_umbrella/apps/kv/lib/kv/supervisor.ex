@@ -11,7 +11,8 @@ defmodule KV.Supervisor do
       {DynamicSupervisor, name: KV.BucketSupervisor, strategy: :one_for_one},
       ## supervisor sẽ start KV.Registry bằng cách gọi hàm
       ## KV.Registry.start_link(name: KV.Registry)
-      {KV.Registry, name: KV.Registry}
+      {KV.Registry, name: KV.Registry},
+      {Task.Supervisor, name: KV.RouterTasks}
     ]
 
     ## strategy: :one_for_one nếu 1 child process bị chết
