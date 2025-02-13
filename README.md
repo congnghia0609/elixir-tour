@@ -197,7 +197,7 @@ Xem chi tiết về ngôn ngữ lập trình Elixir [tại đây](elixir-program
 
 
 
-## Observer
+# Observer
 Để chạy được Tool Observer đi kèm với Erlang hỗ trợ GUI hiển thị trực quan các thông số của hệ thống máy ảo Erlang cùng với cây giám sát supervision tree, ta chạy lệnh sau:  
 ```bash
 iex -S mix
@@ -210,7 +210,7 @@ iex> :observer.start()
 Nếu trong file `mix.exs` đã có cấu hình `extra_applications: [:logger, :runtime_tools, :wx, :observer],` thì không cần chạy các lệnh `Mix.ensure_application!/1` chỉ cần chạy `:observer.start()` là được.  
 
 
-## ETS (Erlang Term Storage)
+# ETS (Erlang Term Storage)
 ETS cho phép chúng ta lưu trữ bất kỳ khái niệm Elixir nào vào 1 bảng table trong bộ nhớ, được thực hiện qua module `:ets` của Erlang.  
 
 Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các tùy chọn. 2 Tùy chọn cần thiết là loại bảng và quy tắc truy cập bảng. Trong đó, quy tắc truy cập bảng bao gồm:  
@@ -219,7 +219,7 @@ Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các 
 - `:private` Read/Write chỉ giới hạn cho tiến trình sở hữu.
 
 
-## Umbrella projects
+# Umbrella projects
 Umbrella projects được sử dụng để xây dựng các ứng dụng chạy chùng nhau trong 1 kho lưu trữ repository duy nhất.  
 
 Để tạo Umbrella projects ta dùng lệnh:
