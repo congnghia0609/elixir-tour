@@ -196,7 +196,7 @@ Ref: [https://hexdocs.pm/elixir/introduction.html](https://hexdocs.pm/elixir/int
 Xem chi tiết về ngôn ngữ lập trình Elixir [tại đây](elixir-programing.md).  
 
 
-
+  
 # Observer
 Để chạy được Tool Observer đi kèm với Erlang hỗ trợ GUI hiển thị trực quan các thông số của hệ thống máy ảo Erlang cùng với cây giám sát supervision tree, ta chạy lệnh sau:  
 ```bash
@@ -213,14 +213,14 @@ Nếu trong file `mix.exs` đã có cấu hình `extra_applications: [:logger, :
 # ETS (Erlang Term Storage)
 ETS cho phép chúng ta lưu trữ bất kỳ khái niệm Elixir nào vào 1 bảng table trong bộ nhớ, được thực hiện qua module `:ets` của Erlang.  
 
-Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các tùy chọn. 2 Tùy chọn cần thiết là loại bảng và quy tắc truy cập bảng. Trong đó, quy tắc truy cập bảng bao gồm:  
+Khi tạo bảng ETS, cần có 2 đối số: tên bảng và tập hợp các tùy chọn. 2 tùy chọn cần thiết là loại bảng (mặc định là `:set` các key không trùng nhau) và quy tắc truy cập bảng. Trong đó, quy tắc truy cập bảng bao gồm:  
 - `:public` Read/Write cho tất cả các tiến trình.
 - `:protected` Read cho tất cả tiến trình, chỉ được Write bởi tiến trình sở hữu. Đây là tùy chọn mặc định.
 - `:private` Read/Write chỉ giới hạn cho tiến trình sở hữu.
 
 
 # Umbrella projects
-Umbrella projects được sử dụng để xây dựng các ứng dụng chạy chùng nhau trong 1 kho lưu trữ repository duy nhất.  
+Umbrella projects được sử dụng để xây dựng các ứng dụng chạy cùng nhau trong 1 kho lưu trữ repository duy nhất.  
 
 Để tạo Umbrella projects ta dùng lệnh:
 ```bash
@@ -259,7 +259,7 @@ for each application in the apps/ directory.
 ```bash
 cd kv_umbrella/apps
 mix new kv_server --module KVServer --sup
-# cờ flag `--sup` là nhờ Mix tạo một cây giám sát supervision tree tự động chu chúng ta, thay vì phải tự làm bằng tay.
+# cờ flag `--sup` là nhờ Mix tạo một cây giám sát supervision tree tự động cho chúng ta, thay vì phải tự làm bằng tay.
 * creating README.md
 * creating .formatter.exs
 * creating .gitignore
@@ -279,6 +279,67 @@ You can use "mix" to compile it, test it, and more:
 
 Run "mix help" for more commands.
 ```
+
+
+# Releases
+Để release project thông thường thì chỉ cần chạy: `mix release`.  
+
+Với umbrella project thì chạy:
+```bash
+MIX_ENV=prod mix release
+
+* assembling foo-0.0.1 on MIX_ENV=prod
+* using config/runtime.exs to configure the release at runtime
+
+Release created at _build/prod/rel/foo
+
+    # To start your system
+    _build/prod/rel/foo/bin/foo start
+
+Once the release is running:
+
+    # To connect to it remotely
+    _build/prod/rel/foo/bin/foo remote
+
+    # To stop it gracefully (you may also send SIGINT/SIGTERM)
+    _build/prod/rel/foo/bin/foo stop
+
+To list all commands:
+
+    _build/prod/rel/foo/bin/foo
+
+```
+
+Chú ý 1 số lệnh để vận hành bản build release:  
+- `bin/foo start`, `bin/foo start_iex`, `bin/foo restart`, và `bin/foo stop` để thao tác khởi chạy, khởi chạy lại hoặc tắt hệ thống.  
+- `bin/foo rpc COMMAND` và `bin/foo remote` để chạy lệnh trên hệ thống đang chạy hoặc để kết nối với hệ thống đang chạy.  
+- `bin/foo eval COMMAND` để khỡi động 1 hệ thống với chạy 1 lệnh duy nhất và sau đó tắt.
+- `bin/foo daemon` và `bin/foo daemon_iex` để khởi chạy hệ thống ở chế độ chạy ngầm daemon.
+- `bin/foo install` để cài đặt hệ thống như 1 dịch vụ trên máy Windows.
+
+Có 2 chế độ chạy code release: tương tác interactive và nhúng embedded. Mặc định thì chạy ở chế độ tương tác interactive, tải các module 1 cách động khi chúng được sử dụng lần đầu tiên, hạn chế là yêu cầu request đầu tiên sẽ chậm hơn. Với chế độ nhúng embedded là tải tất cả các module có sẵn trước, đảm bảo hệ thống sẵn sàng xử lý các yêu cầu sau khi khởi động.  
+
+
+Build umbrella project với nhiều cấu hình releases thì chạy:  
+```bash
+MIX_ENV=prod mix release foo
+MIX_ENV=prod mix release bar
+```
+
+
+# Operating System environment configuration (Cấu hình môi trường hệ điều hành)
+
+Để tạo các file cấu hình cho môi trường chạy ta dùng lệnh:  
+```bash
+mix release.init
+
+* creating rel/vm.args.eex
+* creating rel/remote.vm.args.eex
+* creating rel/env.sh.eex
+* creating rel/env.bat.eex
+```
+
+
 
 
 

@@ -19,6 +19,7 @@ defmodule KV.MixProject do
   def application do
     [
       extra_applications: [:logger, :runtime_tools, :wx, :observer],
+      env: [routing_table: []],
       mod: {KV, []}
     ]
   end
