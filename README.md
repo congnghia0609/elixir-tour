@@ -339,7 +339,7 @@ mix release.init
 * creating rel/env.bat.eex
 ```
 
-
+Để cấu hình VM arguments thì xem thêm tài liệu về [VM arguments and flags in the Erlang documentation](https://www.erlang.org/doc/apps/erts/erl_cmd.html)
 
 
 
